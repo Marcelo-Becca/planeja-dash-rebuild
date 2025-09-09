@@ -57,6 +57,25 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Planeja+ specific colors
+        hover: "hsl(var(--hover))",
+        active: "hsl(var(--active))",
+        progress: {
+          track: "hsl(var(--progress-track))",
+          fill: "hsl(var(--progress-fill))",
+          secondary: "hsl(var(--progress-fill-secondary))",
+        },
+      },
+      backgroundImage: {
+        "gradient-brand": "var(--gradient-brand)",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        "card-hover": "var(--shadow-hover)",
+      },
+      transitionProperty: {
+        fast: "var(--transition-fast)",
+        smooth: "var(--transition-smooth)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -80,10 +99,41 @@ export default {
             height: "0",
           },
         },
+        "progress-fill": {
+          "0%": {
+            width: "0%",
+          },
+          "100%": {
+            width: "var(--progress-width)",
+          },
+        },
+        "fade-in": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(10px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
+        "slide-in-left": {
+          "0%": {
+            transform: "translateX(-10px)",
+            opacity: "0",
+          },
+          "100%": {
+            transform: "translateX(0)",
+            opacity: "1",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "progress-fill": "progress-fill 1s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "slide-in-left": "slide-in-left 0.4s ease-out",
       },
     },
   },
