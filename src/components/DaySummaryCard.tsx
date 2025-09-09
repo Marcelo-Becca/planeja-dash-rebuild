@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { CheckCircle, Clock, Target, Calendar } from "lucide-react";
 import DashboardCard from "./DashboardCard";
 
@@ -8,15 +9,17 @@ const summaryItems = [
     icon: CheckCircle,
     text: "Concluída a revisão do ",
     highlight: "Projeto Alpha",
-    time: "há 2 horas"
+    time: "há 2 horas",
+    link: "/projects/1"
   },
   {
     id: 2,
-    type: "upcoming",
+    type: "upcoming", 
     icon: Calendar,
     text: "Reunião agendada com ",
     highlight: "Equipe de Design",
-    time: "às 15:30"
+    time: "às 15:30",
+    link: "/projects/2"
   },
   {
     id: 3,
@@ -24,15 +27,17 @@ const summaryItems = [
     icon: Target,
     text: "Nova meta criada: ",
     highlight: "Finalizar protótipo",
-    time: "hoje"
+    time: "hoje",
+    link: "/tasks/1"
   },
   {
     id: 4,
     type: "in-progress",
     icon: Clock,
     text: "Em andamento: ",
-    highlight: "Análise de métricas",
-    time: "iniciado ontem"
+    highlight: "Análise de métricas", 
+    time: "iniciado ontem",
+    link: "/tasks/3"
   },
   {
     id: 5,
@@ -40,7 +45,8 @@ const summaryItems = [
     icon: CheckCircle,
     text: "Tarefa finalizada: ",
     highlight: "Update do dashboard",
-    time: "há 30 min"
+    time: "há 30 min",
+    link: "/tasks/2"
   }
 ];
 
@@ -81,9 +87,12 @@ export default function DaySummaryCard() {
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-card-foreground">
                   {item.text}
-                  <button className="text-primary hover:text-primary/80 font-medium transition-colors duration-200 cursor-pointer hover:underline">
+                  <Link 
+                    to={item.link}
+                    className="text-primary hover:text-primary/80 font-medium transition-colors duration-200 cursor-pointer hover:underline"
+                  >
                     {item.highlight}
-                  </button>
+                  </Link>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {item.time}

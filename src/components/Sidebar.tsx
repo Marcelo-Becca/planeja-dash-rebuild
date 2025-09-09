@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { 
   LayoutDashboard, 
   FolderKanban, 
@@ -6,12 +7,11 @@ import {
   BarChart3, 
   Users, 
   Calendar,
-  Settings,
-  LogOut,
   Menu,
   X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import UserProfile from "./UserProfile";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -19,21 +19,22 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, active: true },
-  { id: "projects", label: "Projetos", icon: FolderKanban, active: false },
-  { id: "tasks", label: "Tarefas", icon: CheckSquare, active: false },
-  { id: "reports", label: "Relatórios", icon: BarChart3, active: false },
-  { id: "teams", label: "Equipes", icon: Users, active: false },
-  { id: "calendar", label: "Calendário", icon: Calendar, active: false },
-];
-
-const footerItems = [
-  { id: "settings", label: "Configurações", icon: Settings },
-  { id: "logout", label: "Sair", icon: LogOut },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { id: "projects", label: "Projetos", icon: FolderKanban, path: "/projects" },
+  { id: "tasks", label: "Tarefas", icon: CheckSquare, path: "/tasks" },
+  { id: "reports", label: "Relatórios", icon: BarChart3, path: "/reports" },
+  { id: "teams", label: "Equipes", icon: Users, path: "/teams" },
+  { id: "calendar", label: "Calendário", icon: Calendar, path: "/calendar" },
 ];
 
 export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps) {
-  const [activeItem, setActiveItem] = useState("dashboard");
+  const location = useLocation();
+  
+  const getActiveItem = () => {
+    const currentPath = location.pathname;
+    const activeMenuItem = menuItems.find(item => item.path === currentPath);
+    return activeMenuItem?.id || "dashboard";
+  };
 
   // Handle mobile responsiveness
   useEffect(() => {
@@ -85,12 +86,12 @@ export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps
         <ul className="space-y-1 px-3">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeItem === item.id;
+            const isActive = getActiveItem() === item.id;
             
             return (
               <li key={item.id}>
-                <button
-                  onClick={() => setActiveItem(item.id)}
+                <Link
+                  to={item.path}
                   className={cn(
                     "w-full flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
                     isActive 
@@ -120,7 +121,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps
                       {item.label}
                     </div>
                   )}
-                </button>
+                </Link>
               </li>
             );
           })}
@@ -129,32 +130,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps
 
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
-        <ul className="space-y-1">
-          {footerItems.map((item) => {
-            const Icon = item.icon;
-            
-            return (
-              <li key={item.id}>
-                <button
-                  className="w-full flex items-center px-3 py-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-all duration-200 group relative"
-                  aria-label={item.label}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  {!isCollapsed && (
-                    <span className="ml-3 text-sm truncate">{item.label}</span>
-                  )}
-
-                  {/* Tooltip for collapsed state */}
-                  {isCollapsed && (
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                      {item.label}
-                    </div>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        <UserProfile isCollapsed={isCollapsed} />
       </div>
     </aside>
   );
