@@ -176,5 +176,144 @@ export const mockTasks: Task[] = [
   }
 ];
 
+export interface Team {
+  id: string;
+  name: string;
+  description: string;
+  objective: string;
+  status: 'active' | 'archived';
+  color: string;
+  createdAt: Date;
+  createdBy: User;
+  leader: User;
+  members: TeamMember[];
+  projects: Project[];
+  recentActivity: TeamActivity[];
+}
+
+export interface TeamMember {
+  id: string;
+  user: User;
+  role: 'leader' | 'manager' | 'member';
+  joinedAt: Date;
+  tasksCount: number;
+}
+
+export interface TeamActivity {
+  id: string;
+  type: 'member_added' | 'member_removed' | 'role_changed' | 'project_assigned';
+  description: string;
+  performedBy: User;
+  timestamp: Date;
+}
+
+// Mock teams
+export const mockTeams: Team[] = [
+  {
+    id: '1',
+    name: 'Desenvolvimento Frontend',
+    description: 'Equipe responsável pelo desenvolvimento da interface do usuário',
+    objective: 'Criar interfaces modernas e responsivas para os projetos da empresa',
+    status: 'active',
+    color: 'blue',
+    createdAt: new Date('2024-09-01'),
+    createdBy: mockUsers[0],
+    leader: mockUsers[1],
+    members: [
+      {
+        id: '1',
+        user: mockUsers[1],
+        role: 'leader',
+        joinedAt: new Date('2024-09-01'),
+        tasksCount: 8
+      },
+      {
+        id: '2',
+        user: mockUsers[2],
+        role: 'member',
+        joinedAt: new Date('2024-09-15'),
+        tasksCount: 5
+      }
+    ],
+    projects: [mockProjects[0], mockProjects[1]],
+    recentActivity: [
+      {
+        id: '1',
+        type: 'member_added',
+        description: 'Ana Costa foi adicionada à equipe',
+        performedBy: mockUsers[1],
+        timestamp: new Date('2024-10-10')
+      },
+      {
+        id: '2',
+        type: 'project_assigned',
+        description: 'Projeto App Mobile foi associado à equipe',
+        performedBy: mockUsers[0],
+        timestamp: new Date('2024-10-08')
+      }
+    ]
+  },
+  {
+    id: '2',
+    name: 'Quality Assurance',
+    description: 'Equipe dedicada aos testes e garantia de qualidade',
+    objective: 'Assegurar a qualidade e confiabilidade de todos os produtos entregues',
+    status: 'active',
+    color: 'green',
+    createdAt: new Date('2024-09-10'),
+    createdBy: mockUsers[0],
+    leader: mockUsers[3],
+    members: [
+      {
+        id: '3',
+        user: mockUsers[3],
+        role: 'leader',
+        joinedAt: new Date('2024-09-10'),
+        tasksCount: 3
+      }
+    ],
+    projects: [mockProjects[0]],
+    recentActivity: [
+      {
+        id: '3',
+        type: 'role_changed',
+        description: 'Pedro Lima foi promovido a Líder',
+        performedBy: mockUsers[0],
+        timestamp: new Date('2024-10-05')
+      }
+    ]
+  },
+  {
+    id: '3',
+    name: 'Marketing Digital',
+    description: 'Equipe de estratégias digitais e comunicação',
+    objective: 'Desenvolver e executar estratégias de marketing digital',
+    status: 'archived',
+    color: 'purple',
+    createdAt: new Date('2024-08-01'),
+    createdBy: mockUsers[0],
+    leader: mockUsers[0],
+    members: [
+      {
+        id: '4',
+        user: mockUsers[0],
+        role: 'leader',
+        joinedAt: new Date('2024-08-01'),
+        tasksCount: 0
+      }
+    ],
+    projects: [mockProjects[2]],
+    recentActivity: [
+      {
+        id: '4',
+        type: 'member_removed',
+        description: 'Equipe foi arquivada',
+        performedBy: mockUsers[0],
+        timestamp: new Date('2024-10-01')
+      }
+    ]
+  }
+];
+
 // Current user (for profile)
 export const currentUser = mockUsers[0];
