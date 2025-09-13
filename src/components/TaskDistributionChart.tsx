@@ -9,6 +9,7 @@ interface TaskDistributionData {
 
 interface TaskDistributionChartProps {
   data: TaskDistributionData[];
+  onSegmentClick?: (category: string) => void;
 }
 
 const chartConfig = {
@@ -30,7 +31,7 @@ const chartConfig = {
   },
 };
 
-export default function TaskDistributionChart({ data }: TaskDistributionChartProps) {
+export default function TaskDistributionChart({ data, onSegmentClick }: TaskDistributionChartProps) {
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0];
@@ -40,6 +41,11 @@ export default function TaskDistributionChart({ data }: TaskDistributionChartPro
           <p className="text-sm text-muted-foreground">
             {data.value} tarefas ({((data.value / data.payload.total) * 100).toFixed(1)}%)
           </p>
+          {onSegmentClick && (
+            <p className="text-xs text-muted-foreground mt-2 border-t pt-2">
+              Clique para ver detalhes
+            </p>
+          )}
         </div>
       );
     }
@@ -66,6 +72,23 @@ export default function TaskDistributionChart({ data }: TaskDistributionChartPro
     );
   };
 
+  const getCategoryKey = (name: string) => {
+    switch (name) {
+      case "Concluídas": return "completed";
+      case "Em andamento": return "inProgress";
+      case "Pendentes": return "pending";
+      case "Atrasadas": return "overdue";
+      default: return "pending";
+    }
+  };
+
+  const handleCellClick = (entry: any) => {
+    if (onSegmentClick) {
+      const categoryKey = getCategoryKey(entry.name);
+      onSegmentClick(categoryKey);
+    }
+  };
+
   // Calculate total for percentage
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const dataWithTotal = data.map(item => ({ ...item, total }));
@@ -86,7 +109,12 @@ export default function TaskDistributionChart({ data }: TaskDistributionChartPro
               dataKey="value"
             >
               {dataWithTotal.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={entry.color}
+                  className={onSegmentClick ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
+                  onClick={() => handleCellClick(entry)}
+                />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />

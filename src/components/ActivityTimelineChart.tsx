@@ -8,6 +8,7 @@ interface ActivityTimelineData {
 
 interface ActivityTimelineChartProps {
   data: ActivityTimelineData[];
+  granularity?: "day" | "week" | "month";
 }
 
 const chartConfig = {
@@ -17,7 +18,7 @@ const chartConfig = {
   },
 };
 
-export default function ActivityTimelineChart({ data }: ActivityTimelineChartProps) {
+export default function ActivityTimelineChart({ data, granularity = "day" }: ActivityTimelineChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const date = new Date(label);
@@ -33,6 +34,9 @@ export default function ActivityTimelineChart({ data }: ActivityTimelineChartPro
           <p className="text-sm text-chart-1">
             {payload[0].value} tarefas concluídas
           </p>
+          <div className="mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+            Granularidade: {granularity === "day" ? "Diária" : granularity === "week" ? "Semanal" : "Mensal"}
+          </div>
         </div>
       );
     }
@@ -41,10 +45,17 @@ export default function ActivityTimelineChart({ data }: ActivityTimelineChartPro
 
   const formatXAxisLabel = (tickItem: string) => {
     const date = new Date(tickItem);
-    return date.toLocaleDateString('pt-BR', { 
-      day: '2-digit',
-      month: '2-digit'
-    });
+    switch (granularity) {
+      case "week":
+        return `Sem ${Math.ceil(date.getDate() / 7)}`;
+      case "month":
+        return date.toLocaleDateString('pt-BR', { month: 'short' });
+      default:
+        return date.toLocaleDateString('pt-BR', { 
+          day: '2-digit',
+          month: '2-digit'
+        });
+    }
   };
 
   return (
@@ -81,6 +92,7 @@ export default function ActivityTimelineChart({ data }: ActivityTimelineChartPro
                 strokeWidth: 2,
                 fill: "hsl(var(--background))"
               }}
+              className="animate-pulse-slow"
             />
           </LineChart>
         </ResponsiveContainer>

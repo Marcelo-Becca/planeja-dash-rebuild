@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 
 interface ProjectPerformanceData {
   name: string;
@@ -10,6 +10,7 @@ interface ProjectPerformanceData {
 
 interface ProjectPerformanceChartProps {
   data: ProjectPerformanceData[];
+  onProjectClick?: (projectName: string) => void;
 }
 
 const chartConfig = {
@@ -17,17 +18,9 @@ const chartConfig = {
     label: "Progresso",
     color: "hsl(var(--chart-1))",
   },
-  completed: {
-    label: "Concluídas",
-    color: "hsl(var(--chart-2))",
-  },
-  pending: {
-    label: "Pendentes",
-    color: "hsl(var(--chart-3))",
-  },
 };
 
-export default function ProjectPerformanceChart({ data }: ProjectPerformanceChartProps) {
+export default function ProjectPerformanceChart({ data, onProjectClick }: ProjectPerformanceChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -45,10 +38,21 @@ export default function ProjectPerformanceChart({ data }: ProjectPerformanceChar
               Pendentes: {data.pendingTasks} tarefas
             </p>
           </div>
+          {onProjectClick && (
+            <p className="text-xs text-muted-foreground mt-2 border-t pt-2">
+              Clique para ver detalhes
+            </p>
+          )}
         </div>
       );
     }
     return null;
+  };
+
+  const handleBarClick = (data: any) => {
+    if (onProjectClick) {
+      onProjectClick(data.name);
+    }
   };
 
   return (
@@ -77,6 +81,8 @@ export default function ProjectPerformanceChart({ data }: ProjectPerformanceChar
               dataKey="progress" 
               fill="var(--color-progress)"
               radius={[0, 4, 4, 0]}
+              className={onProjectClick ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
+              onClick={handleBarClick}
             />
           </BarChart>
         </ResponsiveContainer>
