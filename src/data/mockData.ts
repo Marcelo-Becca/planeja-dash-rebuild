@@ -1,5 +1,35 @@
 // Mock data for the Planeja+ system
 
+export interface ReportData {
+  productivity: {
+    completedTasks: number;
+    achievedGoals: number;
+    activeProjects: number;
+    overdueTasks: number;
+  };
+  projectPerformance: Array<{
+    name: string;
+    progress: number;
+    completedTasks: number;
+    pendingTasks: number;
+  }>;
+  taskDistribution: Array<{
+    name: string;
+    value: number;
+    color: string;
+  }>;
+  teamProductivity: Array<{
+    name: string;
+    completed: number;
+    inProgress: number;
+    overdue: number;
+  }>;
+  activityTimeline: Array<{
+    date: string;
+    tasks: number;
+  }>;
+}
+
 export interface User {
   id: string;
   name: string;

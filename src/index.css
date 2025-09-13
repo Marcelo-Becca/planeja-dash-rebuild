@@ -48,6 +48,13 @@ All colors MUST be HSL.
 
     /* Progress bars */
     --progress-track: 216 15% 15%; /* Progress bar background */
+    
+    /* Chart colors - Professional cool palette */
+    --chart-1: 195 100% 45%; /* Primary aqua */
+    --chart-2: 220 70% 50%; /* Deep blue */
+    --chart-3: 280 60% 50%; /* Purple */
+    --chart-4: 25 90% 55%; /* Orange/amber for warnings */
+    --chart-5: 0 70% 50%; /* Red for errors */
     --progress-fill: 195 100% 45%; /* Progress bar fill */
     --progress-fill-secondary: 195 80% 35%; /* Secondary progress color */
 
