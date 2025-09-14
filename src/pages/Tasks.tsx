@@ -1,5 +1,6 @@
 import Layout from "@/components/Layout";
 import TaskCard from "@/components/TaskCard";
+import CreateTaskModal from "@/components/CreateTaskModal";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search } from "lucide-react";
 import { mockTasks } from "@/data/mockData";
@@ -9,6 +10,7 @@ export default function Tasks() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const filteredTasks = mockTasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -34,7 +36,7 @@ export default function Tasks() {
               </p>
             </div>
             
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="w-4 h-4" />
               Nova Tarefa
             </Button>
@@ -104,7 +106,7 @@ export default function Tasks() {
               <p className="text-muted-foreground mb-4">
                 Tente ajustar os filtros ou criar uma nova tarefa
               </p>
-              <Button>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Criar Primeira Tarefa
               </Button>
@@ -112,6 +114,12 @@ export default function Tasks() {
           )}
         </div>
       </div>
+
+      {/* Create Task Modal */}
+      <CreateTaskModal 
+        open={isCreateModalOpen} 
+        onOpenChange={setIsCreateModalOpen}
+      />
     </Layout>
   );
 }
