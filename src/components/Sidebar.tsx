@@ -7,6 +7,7 @@ import {
   BarChart3, 
   Users, 
   Calendar,
+  Settings,
   Menu,
   X
 } from "lucide-react";
@@ -25,6 +26,7 @@ const menuItems = [
   { id: "reports", label: "Relatórios", icon: BarChart3, path: "/reports" },
   { id: "teams", label: "Equipes", icon: Users, path: "/teams" },
   { id: "calendar", label: "Calendário", icon: Calendar, path: "/calendar" },
+  { id: "settings", label: "Configurações", icon: Settings, path: "/settings" },
 ];
 
 export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps) {

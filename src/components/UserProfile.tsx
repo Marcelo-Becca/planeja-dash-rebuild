@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Settings, User, LogOut, ChevronUp } from "lucide-react";
 import { currentUser } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface UserProfileProps {
   isCollapsed: boolean;
@@ -63,10 +64,14 @@ export default function UserProfile({ isCollapsed }: UserProfileProps) {
               <User className="w-4 h-4 mr-3" />
               Meu Perfil
             </button>
-            <button className="w-full flex items-center px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors">
+            <Link 
+              to="/settings" 
+              className="w-full flex items-center px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
               <Settings className="w-4 h-4 mr-3" />
               Configurações
-            </button>
+            </Link>
             <div className="border-t border-sidebar-border my-1" />
             <button className="w-full flex items-center px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent/70 transition-colors">
               <LogOut className="w-4 h-4 mr-3" />
