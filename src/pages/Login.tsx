@@ -1,0 +1,284 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, Chrome, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
+
+const Login = () => {
+  const navigate = useNavigate();
+  const { login, isLoading, loginAttempts, isBlocked, blockTimeRemaining } = useAuth();
+  
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    rememberMe: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Validação em tempo real
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) return 'E-mail é obrigatório';
+    if (!emailRegex.test(email) && !email.includes('@')) return '';
+    if (!emailRegex.test(email)) return 'Formato de e-mail inválido';
+    return '';
+  };
+
+  const validatePassword = (password: string) => {
+    if (!password) return 'Senha é obrigatória';
+    if (password.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
+    return '';
+  };
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Limpar erro do campo quando usuário começar a digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isBlocked) return;
+    
+    // Validações
+    const emailError = validateEmail(formData.email);
+    const passwordError = validatePassword(formData.password);
+    
+    if (emailError || passwordError) {
+      setErrors({
+        email: emailError,
+        password: passwordError,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      await login(formData.email, formData.password, formData.rememberMe);
+      navigate('/');
+    } catch (error) {
+      // Erros já tratados no contexto
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    // Simular login social
+    const mockSuccess = Math.random() > 0.3; // 70% de chance de sucesso
+    
+    if (mockSuccess) {
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    }
+  };
+
+  const handleQuickFill = () => {
+    setFormData({
+      email: 'joao@exemplo.com',
+      password: '123456789A@',
+      rememberMe: false,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-foreground">Entrar no Planeja+</h1>
+          <p className="text-muted-foreground">Acesse sua conta para gerenciar projetos e tarefas</p>
+        </div>
+
+        <Card className="shadow-card-hover transition-all duration-300">
+          <CardHeader className="pb-4">
+            <div className="flex justify-center space-x-2">
+              <Button
+                variant="outline"
+                size="lg"
+                className="flex-1"
+                onClick={() => handleSocialLogin('google')}
+              >
+                <Chrome className="w-4 h-4 mr-2" />
+                Google
+              </Button>
+              <Button
+                variant="outline"
+                size="lg" 
+                className="flex-1"
+                onClick={() => handleSocialLogin('microsoft')}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                Microsoft
+              </Button>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">ou usar e-mail e senha</span>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* E-mail Field */}
+              <div className="space-y-2">
+                <Label htmlFor="email">E-mail ou usuário</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="text"
+                    placeholder="seu@email.com ou usuario"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onBlur={(e) => {
+                      const error = validateEmail(e.target.value);
+                      if (error) setErrors(prev => ({ ...prev, email: error }));
+                    }}
+                    className={cn(
+                      "pl-10 transition-colors",
+                      errors.email && "border-destructive"
+                    )}
+                    disabled={isSubmitting || isLoading}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    Esqueci minha senha
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Digite sua senha"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    onBlur={(e) => {
+                      const error = validatePassword(e.target.value);
+                      if (error) setErrors(prev => ({ ...prev, password: error }));
+                    }}
+                    className={cn(
+                      "pl-10 pr-10 transition-colors",
+                      errors.password && "border-destructive"
+                    )}
+                    disabled={isSubmitting || isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Remember Me */}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="remember"
+                  checked={formData.rememberMe}
+                  onCheckedChange={(checked) => handleInputChange('rememberMe', checked as boolean)}
+                />
+                <Label 
+                  htmlFor="remember" 
+                  className="text-sm cursor-pointer"
+                  title="Não recomendado em computadores públicos"
+                >
+                  Lembrar de mim
+                </Label>
+              </div>
+
+              {/* Block Warning */}
+              {isBlocked && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm text-destructive animate-fade-in">
+                  Muitas tentativas de login. Tente novamente em {blockTimeRemaining} segundos.
+                </div>
+              )}
+
+              {/* Attempts Warning */}
+              {loginAttempts > 0 && loginAttempts < 5 && !isBlocked && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-3 text-sm text-amber-600">
+                  Tentativa {loginAttempts} de 5. Após 5 tentativas, sua conta será bloqueada temporariamente.
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={isSubmitting || isLoading || isBlocked}
+              >
+                {isSubmitting || isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  'Entrar'
+                )}
+              </Button>
+            </form>
+
+            {/* Demo Helper */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleQuickFill}
+                className="w-full text-xs"
+              >
+                💡 Preencher dados de demonstração
+              </Button>
+            </div>
+
+            {/* Sign Up Link */}
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Não tem uma conta?{' '}
+              <Link to="/register" className="text-primary hover:text-primary/80 transition-colors font-medium">
+                Criar conta
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default Login;
