@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Building, Chrome, Loader2, Check, X } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Building, Loader2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +59,8 @@ const Register = () => {
   const validateName = (name: string) => {
     if (!name) return 'Nome é obrigatório';
     if (name.length < 2) return 'Nome deve ter pelo menos 2 caracteres';
+    const words = name.trim().split(' ').filter(word => word.length > 0);
+    if (words.length < 2) return 'Digite pelo menos nome e sobrenome';
     return '';
   };
 
@@ -223,25 +225,12 @@ const Register = () => {
         <Card className="shadow-card-hover transition-all duration-300">
           {step === 1 && (
             <>
-              <CardHeader className="pb-4">
-                <div className="flex justify-center space-x-2">
-                  <Button variant="outline" size="lg" className="flex-1">
-                    <Chrome className="w-4 h-4 mr-2" />
-                    Google
-                  </Button>
-                  <Button variant="outline" size="lg" className="flex-1">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Microsoft
-                  </Button>
-                </div>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ou criar com e-mail</span>
-                  </div>
+              <CardHeader className="pb-6">
+                {/* Modo demonstrativo tag */}
+                <div className="text-center mb-4">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 border border-amber-200">
+                    🔧 Modo demonstrativo: fluxos simulados
+                  </span>
                 </div>
               </CardHeader>
 
@@ -430,12 +419,47 @@ const Register = () => {
                 {/* Display Name */}
                 <div className="space-y-2">
                   <Label htmlFor="displayName">Nome de exibição</Label>
-                  <Input
-                    id="displayName"
-                    placeholder="Como você gostaria de ser chamado?"
-                    value={formData.displayName}
-                    onChange={(e) => handleInputChange('displayName', e.target.value)}
-                  />
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="displayName"
+                      placeholder="Como você gostaria de ser chamado?"
+                      value={formData.displayName}
+                      onChange={(e) => handleInputChange('displayName', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Usado em comentários e menções</p>
+                </div>
+
+                {/* Role */}
+                <div className="space-y-2">
+                  <Label htmlFor="role">Cargo / Função</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="role"
+                      placeholder="Ex.: Product Manager"
+                      value={formData.role}
+                      onChange={(e) => handleInputChange('role', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Company */}
+                <div className="space-y-2">
+                  <Label htmlFor="company">Nome da empresa / organização</Label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="company"
+                      placeholder="Ex.: Padaria do Bairro (MEI)"
+                      value={formData.company}
+                      onChange={(e) => handleInputChange('company', e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
                 </div>
 
                 {/* Phone */}
@@ -454,34 +478,8 @@ const Register = () => {
                   {errors.phone && (
                     <p className="text-sm text-destructive animate-fade-in">{errors.phone}</p>
                   )}
+                  <p className="text-xs text-muted-foreground">Apenas se quiser adicionar contato</p>
                 </div>
-
-                {/* Role */}
-                <div className="space-y-2">
-                  <Label htmlFor="role">Cargo / Função</Label>
-                  <Input
-                    id="role"
-                    placeholder="Ex.: Gerente de Projetos"
-                    value={formData.role}
-                    onChange={(e) => handleInputChange('role', e.target.value)}
-                  />
-                </div>
-
-                {/* Company */}
-                <div className="space-y-2">
-                  <Label htmlFor="company">Empresa</Label>
-                  <div className="relative">
-                    <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="company"
-                      placeholder="Nome da sua empresa"
-                      value={formData.company}
-                      onChange={(e) => handleInputChange('company', e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
                 {/* Preferences */}
                 <div className="space-y-3">
                   <Label>Preferências de comunicação</Label>
@@ -493,7 +491,7 @@ const Register = () => {
                         onCheckedChange={(checked) => handleInputChange('preferences.emailTips', checked as boolean)}
                       />
                       <Label htmlFor="emailTips" className="text-sm">
-                        Receber dicas por e-mail
+                        Quero receber dicas e novidades (email)
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -503,17 +501,7 @@ const Register = () => {
                         onCheckedChange={(checked) => handleInputChange('preferences.emailReports', checked as boolean)}
                       />
                       <Label htmlFor="emailReports" className="text-sm">
-                        Relatórios semanais por e-mail
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="newsletter"
-                        checked={formData.preferences.newsletter}
-                        onCheckedChange={(checked) => handleInputChange('preferences.newsletter', checked as boolean)}
-                      />
-                      <Label htmlFor="newsletter" className="text-sm">
-                        Newsletter com novidades
+                        Quero relatórios semanais por email
                       </Label>
                     </div>
                   </div>
@@ -574,14 +562,28 @@ const Register = () => {
 
         {/* Quick Account Option */}
         {step === 1 && (
-          <Card className="border-dashed border-2">
+          <Card className="border-dashed border-2 border-primary/20">
             <CardContent className="pt-6">
               <div className="text-center space-y-2">
-                <h4 className="font-medium">Conta rápida</h4>
+                <h4 className="font-medium">Criar conta rápida</h4>
                 <p className="text-sm text-muted-foreground">
-                  Crie apenas com nome e e-mail. Complete o perfil depois.
+                  Apenas Nome + E-mail + aceitar termos. Complete o perfil depois.
                 </p>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      name: 'Maria Silva',
+                      email: 'maria.demo@planeja.com',
+                      password: 'MinhaSenh@123',
+                      confirmPassword: 'MinhaSenh@123',
+                      acceptTerms: true,
+                    }));
+                    setStep(2);
+                  }}
+                >
                   Criar conta rápida
                 </Button>
               </div>

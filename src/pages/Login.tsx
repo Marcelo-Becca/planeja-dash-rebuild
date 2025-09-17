@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Chrome, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,17 +75,6 @@ const Login = () => {
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    // Simular login social
-    const mockSuccess = Math.random() > 0.3; // 70% de chance de sucesso
-    
-    if (mockSuccess) {
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
-    }
-  };
-
   const handleQuickFill = () => {
     setFormData({
       email: 'joao@exemplo.com',
@@ -104,35 +93,12 @@ const Login = () => {
         </div>
 
         <Card className="shadow-card-hover transition-all duration-300">
-          <CardHeader className="pb-4">
-            <div className="flex justify-center space-x-2">
-              <Button
-                variant="outline"
-                size="lg"
-                className="flex-1"
-                onClick={() => handleSocialLogin('google')}
-              >
-                <Chrome className="w-4 h-4 mr-2" />
-                Google
-              </Button>
-              <Button
-                variant="outline"
-                size="lg" 
-                className="flex-1"
-                onClick={() => handleSocialLogin('microsoft')}
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                Microsoft
-              </Button>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">ou usar e-mail e senha</span>
-              </div>
+          <CardHeader className="pb-6">
+            {/* Modo demonstrativo tag */}
+            <div className="text-center mb-4">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 border border-amber-200">
+                🔧 Modo demonstrativo: fluxos simulados
+              </span>
             </div>
           </CardHeader>
 
