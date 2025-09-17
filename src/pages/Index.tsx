@@ -1,14 +1,11 @@
 import Layout from "@/components/Layout";
 import DaySummaryCard from "@/components/DaySummaryCard";
 import WeeklyProgressCard from "@/components/WeeklyProgressCard";
-
-// Mock user data - in a real app this would come from authentication
-const userData = {
-  name: "Marina Santos",
-  firstName: "Marina"
-};
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
+  const { user } = useAuth();
+  
   return (
     <Layout>
       {/* Header */}
@@ -17,7 +14,7 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl md:text-2xl font-semibold text-foreground">
-                Bem-vindo(a), <span className="text-primary">{userData.firstName}</span>!
+                Bem-vindo(a), <span className="text-primary">{user?.displayName || user?.name.split(' ')[0]}</span>!
               </h1>
               <p className="text-muted-foreground text-sm mt-1">
                 Aqui está um resumo da sua produtividade hoje
