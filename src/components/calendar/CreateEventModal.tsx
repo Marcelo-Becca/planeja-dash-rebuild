@@ -68,8 +68,8 @@ export function CreateEventModal({
         type: initialData.type || 'meeting',
         location: initialData.location || '',
         participants: initialData.participants || [],
-        projectId: initialData.projectId || '',
-        teamId: initialData.teamId || '',
+        projectId: initialData.projectId || 'none',
+        teamId: initialData.teamId || 'none',
         taskId: initialData.taskId || '',
         priority: initialData.priority || 'medium',
         status: initialData.status || 'scheduled',
@@ -91,8 +91,8 @@ export function CreateEventModal({
         type: 'meeting',
         location: '',
         participants: [],
-        projectId: '',
-        teamId: '',
+        projectId: 'none',
+        teamId: 'none',
         taskId: '',
         priority: 'medium',
         status: 'scheduled',
@@ -124,6 +124,8 @@ export function CreateEventModal({
 
     onSave({
       ...formData,
+      projectId: formData.projectId === 'none' ? '' : formData.projectId,
+      teamId: formData.teamId === 'none' ? '' : formData.teamId,
       reminders: formData.reminders.map(r => ({ ...r, triggered: false })),
     });
 
@@ -358,7 +360,7 @@ export function CreateEventModal({
                   <SelectValue placeholder="Selecione um projeto" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhum projeto</SelectItem>
+                  <SelectItem value="none">Nenhum projeto</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
@@ -375,7 +377,7 @@ export function CreateEventModal({
                   <SelectValue placeholder="Selecione uma equipe" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Nenhuma equipe</SelectItem>
+                  <SelectItem value="none">Nenhuma equipe</SelectItem>
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
