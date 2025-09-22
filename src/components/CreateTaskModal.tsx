@@ -25,7 +25,7 @@ import {
   Paperclip,
   CheckSquare,
   Save,
-  Copy
+  Undo2
 } from "lucide-react";
 import { mockProjects, mockUsers } from "@/data/mockData";
 import { useLocalData } from "@/hooks/useLocalData";
@@ -601,7 +601,7 @@ export default function CreateTaskModal({ open, onOpenChange, preselectedProject
             disabled={isLoading}
             className="sm:order-2"
           >
-            <Copy className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             Salvar e criar outra
           </Button>
 

@@ -155,12 +155,13 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
         status: "active",
         color: formData.color,
         createdAt: new Date(),
+        createdBy: teamLeader,
         leader: teamLeader,
         members: teamMembers.map(member => ({
           id: `member-${member.id}`,
           user: member,
-          role: member.id === formData.leaderId ? "Leader" : "Member",
-          joinedAt: new Date().toISOString(),
+          role: member.id === formData.leaderId ? "leader" : "member",
+          joinedAt: new Date(),
           tasksCount: 0
         })),
         projects: [],
@@ -168,8 +169,8 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
           id: `activity-${Date.now()}`,
           type: "member_added",
           description: `Equipe ${formData.name} foi criada`,
-          timestamp: new Date(),
-          user: teamLeader
+          performedBy: teamLeader,
+          timestamp: new Date()
         }]
       });
 

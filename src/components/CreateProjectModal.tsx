@@ -247,19 +247,22 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
           status: "active",
           color: teamData.color,
           createdAt: new Date(),
+          createdBy: teamLeader,
           leader: teamLeader,
           members: teamMembers.map(member => ({
+            id: `member-${member.id}`,
             user: member,
-            role: member.id === teamData.leaderId ? "Leader" : "Member",
-            joinedAt: new Date().toISOString()
+            role: member.id === teamData.leaderId ? "leader" : "member",
+            joinedAt: new Date(),
+            tasksCount: 0
           })),
           projects: [],
         recentActivity: [{
           id: `activity-${Date.now()}`,
           type: "member_added",
           description: `Equipe ${teamData.name} foi criada`,
-          timestamp: new Date(),
-          user: teamLeader
+          performedBy: teamLeader,
+          timestamp: new Date()
         }]
         });
         teamToUse = newTeam;
