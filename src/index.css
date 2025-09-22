@@ -16,20 +16,20 @@ Core palette: #5e17eb (vibrant purple), #35009d (deep purple), #f6862e (vibrant 
     /* Sidebar - Clean light background */
     --sidebar-background: 240 5% 98%; /* Very light gray */
     --sidebar-foreground: 240 4% 46%; /* Medium gray text */
-    --sidebar-primary: 262 88% 51%; /* Vibrant purple #5e17eb */
+    --sidebar-primary: 24 92% 57%; /* Vibrant orange #f6862e */
     --sidebar-primary-foreground: 0 0% 100%; /* White */
     --sidebar-accent: 240 5% 95%; /* Light gray hover */
-    --sidebar-accent-foreground: 262 88% 51%; /* Vibrant purple text */
+    --sidebar-accent-foreground: 24 92% 57%; /* Vibrant orange text */
     --sidebar-border: 240 5% 90%; /* Subtle border */
-    --sidebar-ring: 262 88% 51%; /* Vibrant purple focus */
+    --sidebar-ring: 24 92% 57%; /* Vibrant orange focus */
 
     /* Cards - Clean white with subtle borders */
     --card: 0 0% 100%; /* White background */
     --card-foreground: 240 5% 26%; /* Dark gray text */
 
-    /* Primary brand color - Vibrant purple */
-    --primary: 262 88% 51%; /* #5e17eb - vibrant purple */
-    --primary-foreground: 0 0% 100%; /* White text on purple */
+    /* Primary brand color - Vibrant orange */
+    --primary: 24 92% 57%; /* #f6862e - vibrant orange */
+    --primary-foreground: 0 0% 100%; /* White text on orange */
 
     /* Secondary elements - Deep purple */
     --secondary: 262 100% 31%; /* #35009d - deep purple */
@@ -39,25 +39,25 @@ Core palette: #5e17eb (vibrant purple), #35009d (deep purple), #f6862e (vibrant 
     --muted: 240 5% 95%; /* Very light gray backgrounds */
     --muted-foreground: 240 4% 46%; /* Medium gray text */
 
-    /* Accent for highlights - Vibrant orange */
-    --accent: 24 92% 57%; /* #f6862e - vibrant orange */
+    /* Accent for highlights - Vibrant purple */
+    --accent: 262 88% 51%; /* #5e17eb - vibrant purple */
     --accent-foreground: 0 0% 100%; /* White text */
 
     /* Interactive states */
     --hover: 240 5% 92%; /* Light hover backgrounds */
-    --active: 262 88% 45%; /* Slightly darker purple active state */
+    --active: 24 82% 50%; /* Slightly darker orange active state */
 
     /* Progress bars */
     --progress-track: 240 5% 90%; /* Light gray track */
     
     /* Chart colors - Vibrant professional palette */
-    --chart-1: 262 88% 51%; /* Completed - vibrant purple */
+    --chart-1: 24 92% 57%; /* Completed - vibrant orange */
     --chart-2: 200 85% 55%; /* In progress - light blue */
-    --chart-3: 24 92% 57%; /* Pending - vibrant orange */
+    --chart-3: 262 88% 51%; /* Pending - vibrant purple */
     --chart-4: 10 100% 65%; /* Overdue - orange-red #ff6d4d */
     --chart-5: 0 75% 60%; /* Error/critical */
-    --progress-fill: 262 88% 51%; /* Purple progress fill */
-    --progress-fill-secondary: 24 92% 57%; /* Orange secondary progress */
+    --progress-fill: 24 92% 57%; /* Orange progress fill */
+    --progress-fill-secondary: 262 88% 51%; /* Purple secondary progress */
 
     /* Logo colors */
     --logo-column-1: 262 88% 51%; /* #5e17eb */
@@ -72,7 +72,7 @@ Core palette: #5e17eb (vibrant purple), #35009d (deep purple), #f6862e (vibrant 
 
     --border: 240 5% 90%; /* Light subtle borders */
     --input: 240 5% 95%; /* Light input backgrounds */
-    --ring: 262 88% 51%; /* Purple focus rings */
+    --ring: 24 92% 57%; /* Orange focus rings */
 
     --radius: 0.75rem; /* Rounded corners for modern feel */
 
@@ -81,13 +81,13 @@ Core palette: #5e17eb (vibrant purple), #35009d (deep purple), #f6862e (vibrant 
     --popover-foreground: 240 5% 26%; /* Dark text */
 
     /* Brand gradients */
-    --gradient-brand: linear-gradient(135deg, hsl(262 88% 51%), hsl(262 100% 31%));
-    --gradient-accent: linear-gradient(135deg, hsl(24 92% 57%), hsl(10 100% 65%));
+    --gradient-brand: linear-gradient(135deg, hsl(24 92% 57%), hsl(10 100% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(262 88% 51%), hsl(262 100% 31%));
     
     /* Shadows - Subtle for light theme */
     --shadow-card: 0 2px 8px -2px hsl(240 5% 26% / 0.08);
     --shadow-hover: 0 4px 16px -4px hsl(240 5% 26% / 0.12);
-    --shadow-focus: 0 0 0 3px hsl(262 88% 51% / 0.12);
+    --shadow-focus: 0 0 0 3px hsl(24 92% 57% / 0.12);
 
     /* Transitions */
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
