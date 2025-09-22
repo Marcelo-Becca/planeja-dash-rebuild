@@ -65,13 +65,31 @@ export default {
           fill: "hsl(var(--progress-fill))",
           secondary: "hsl(var(--progress-fill-secondary))",
         },
+        // Logo specific colors
+        logo: {
+          column1: "hsl(var(--logo-column-1))",
+          column2: "hsl(var(--logo-column-2))",
+          column3: "hsl(var(--logo-column-3))",
+          text: "hsl(var(--logo-text))",
+          plus: "hsl(var(--logo-plus))",
+        },
+        // Chart colors with semantic names
+        chart: {
+          completed: "hsl(var(--chart-1))",
+          progress: "hsl(var(--chart-2))",
+          pending: "hsl(var(--chart-3))",
+          overdue: "hsl(var(--chart-4))",
+          critical: "hsl(var(--chart-5))",
+        },
       },
       backgroundImage: {
         "gradient-brand": "var(--gradient-brand)",
+        "gradient-accent": "var(--gradient-accent)",
       },
       boxShadow: {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-hover)",
+        focus: "var(--shadow-focus)",
       },
       transitionProperty: {
         fast: "var(--transition-fast)",

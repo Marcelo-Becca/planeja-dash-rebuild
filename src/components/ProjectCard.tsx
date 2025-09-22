@@ -10,21 +10,21 @@ interface ProjectCardProps {
 const statusConfig = {
   active: {
     label: "Ativo",
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20"
+    color: "text-chart-progress",
+    bgColor: "bg-chart-progress/10",
+    borderColor: "border-chart-progress/20"
   },
   completed: {
     label: "Concluído", 
-    color: "text-green-400",
-    bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/20"
+    color: "text-chart-completed",
+    bgColor: "bg-chart-completed/10",
+    borderColor: "border-chart-completed/20"
   },
   "on-hold": {
     label: "Pausado",
-    color: "text-yellow-400", 
-    bgColor: "bg-yellow-500/10",
-    borderColor: "border-yellow-500/20"
+    color: "text-chart-pending", 
+    bgColor: "bg-chart-pending/10",
+    borderColor: "border-chart-pending/20"
   }
 };
 
@@ -89,7 +89,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-1" />
               <span className={cn(
-                isOverdue && "text-red-400 font-medium"
+                isOverdue && "text-chart-overdue font-medium"
               )}>
                 {project.deadline.toLocaleDateString('pt-BR')}
               </span>

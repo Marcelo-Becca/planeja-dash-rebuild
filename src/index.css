@@ -2,82 +2,92 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Planeja+ Dashboard Design System - Cold/Blue Professional Theme
+/* Planeja+ Dashboard Design System - Light Vibrant Theme
 All colors MUST be HSL.
+Core palette: #5e17eb (vibrant purple), #35009d (deep purple), #f6862e (vibrant orange)
 */
 
 @layer base {
   :root {
-    /* Main backgrounds - Cold dark theme */
-    --background: 216 28% 7%; /* Very dark blue-gray */
-    --foreground: 210 40% 98%; /* Near white */
+    /* Main backgrounds - Light clean theme */
+    --background: 0 0% 100%; /* Pure white */
+    --foreground: 240 5% 26%; /* Dark gray for text */
 
-    /* Sidebar - Darker than main background */
-    --sidebar-background: 216 32% 5%; /* Even darker blue-gray */
-    --sidebar-foreground: 210 25% 85%; /* Light gray text */
-    --sidebar-primary: 195 100% 45%; /* Cold aqua accent */
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 216 25% 12%; /* Slightly lighter than sidebar bg */
-    --sidebar-accent-foreground: 210 25% 85%;
-    --sidebar-border: 216 20% 15%;
-    --sidebar-ring: 195 100% 45%;
+    /* Sidebar - Clean light background */
+    --sidebar-background: 240 5% 98%; /* Very light gray */
+    --sidebar-foreground: 240 4% 46%; /* Medium gray text */
+    --sidebar-primary: 262 88% 51%; /* Vibrant purple #5e17eb */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 240 5% 95%; /* Light gray hover */
+    --sidebar-accent-foreground: 262 88% 51%; /* Vibrant purple text */
+    --sidebar-border: 240 5% 90%; /* Subtle border */
+    --sidebar-ring: 262 88% 51%; /* Vibrant purple focus */
 
-    /* Cards - Intermediate cold tone */
-    --card: 216 25% 12%; /* Lighter than sidebar, darker than accents */
-    --card-foreground: 210 40% 98%;
+    /* Cards - Clean white with subtle borders */
+    --card: 0 0% 100%; /* White background */
+    --card-foreground: 240 5% 26%; /* Dark gray text */
 
-    /* Primary brand color - Cold aqua */
-    --primary: 195 100% 45%; /* Bright aqua for highlights */
-    --primary-foreground: 216 28% 7%;
+    /* Primary brand color - Vibrant purple */
+    --primary: 262 88% 51%; /* #5e17eb - vibrant purple */
+    --primary-foreground: 0 0% 100%; /* White text on purple */
 
-    /* Secondary elements */
-    --secondary: 216 20% 18%; /* Muted card elements */
-    --secondary-foreground: 210 25% 85%;
+    /* Secondary elements - Deep purple */
+    --secondary: 262 100% 31%; /* #35009d - deep purple */
+    --secondary-foreground: 0 0% 100%; /* White text */
 
     /* Muted elements */
-    --muted: 216 15% 15%; /* Very subtle backgrounds */
-    --muted-foreground: 210 15% 65%; /* Inactive text */
+    --muted: 240 5% 95%; /* Very light gray backgrounds */
+    --muted-foreground: 240 4% 46%; /* Medium gray text */
 
-    /* Accent for highlights */
-    --accent: 195 100% 45%; /* Same as primary for consistency */
-    --accent-foreground: 216 28% 7%;
+    /* Accent for highlights - Vibrant orange */
+    --accent: 24 92% 57%; /* #f6862e - vibrant orange */
+    --accent-foreground: 0 0% 100%; /* White text */
 
     /* Interactive states */
-    --hover: 216 20% 20%; /* Hover backgrounds */
-    --active: 195 100% 40%; /* Active state (slightly darker aqua) */
+    --hover: 240 5% 92%; /* Light hover backgrounds */
+    --active: 262 88% 45%; /* Slightly darker purple active state */
 
     /* Progress bars */
-    --progress-track: 216 15% 15%; /* Progress bar background */
+    --progress-track: 240 5% 90%; /* Light gray track */
     
-    /* Chart colors - Professional cool palette */
-    --chart-1: 195 100% 45%; /* Primary aqua */
-    --chart-2: 220 70% 50%; /* Deep blue */
-    --chart-3: 280 60% 50%; /* Purple */
-    --chart-4: 25 90% 55%; /* Orange/amber for warnings */
-    --chart-5: 0 70% 50%; /* Red for errors */
-    --progress-fill: 195 100% 45%; /* Progress bar fill */
-    --progress-fill-secondary: 195 80% 35%; /* Secondary progress color */
+    /* Chart colors - Vibrant professional palette */
+    --chart-1: 262 88% 51%; /* Completed - vibrant purple */
+    --chart-2: 200 85% 55%; /* In progress - light blue */
+    --chart-3: 24 92% 57%; /* Pending - vibrant orange */
+    --chart-4: 10 100% 65%; /* Overdue - orange-red #ff6d4d */
+    --chart-5: 0 75% 60%; /* Error/critical */
+    --progress-fill: 262 88% 51%; /* Purple progress fill */
+    --progress-fill-secondary: 24 92% 57%; /* Orange secondary progress */
+
+    /* Logo colors */
+    --logo-column-1: 262 88% 51%; /* #5e17eb */
+    --logo-column-2: 10 100% 65%; /* #ff6d4d */
+    --logo-column-3: 24 92% 57%; /* #f6862e */
+    --logo-text: 242 67% 21%; /* #171658 */
+    --logo-plus: 10 100% 65%; /* #ff6d4d */
 
     /* Utility colors */
-    --destructive: 0 75% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 60%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text */
 
-    --border: 216 20% 15%; /* Subtle borders */
-    --input: 216 20% 15%;
-    --ring: 195 100% 45%; /* Focus rings */
+    --border: 240 5% 90%; /* Light subtle borders */
+    --input: 240 5% 95%; /* Light input backgrounds */
+    --ring: 262 88% 51%; /* Purple focus rings */
 
-    --radius: 0.75rem; /* Slightly more rounded for modern feel */
+    --radius: 0.75rem; /* Rounded corners for modern feel */
 
     /* Popover elements */
-    --popover: 216 25% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 100%; /* White popover background */
+    --popover-foreground: 240 5% 26%; /* Dark text */
 
-    /* Brand gradient */
-    --gradient-brand: linear-gradient(135deg, hsl(195 100% 45%), hsl(195 80% 35%));
+    /* Brand gradients */
+    --gradient-brand: linear-gradient(135deg, hsl(262 88% 51%), hsl(262 100% 31%));
+    --gradient-accent: linear-gradient(135deg, hsl(24 92% 57%), hsl(10 100% 65%));
     
-    /* Shadows */
-    --shadow-card: 0 4px 20px -2px hsl(216 32% 3% / 0.3);
-    --shadow-hover: 0 8px 30px -4px hsl(216 32% 3% / 0.4);
+    /* Shadows - Subtle for light theme */
+    --shadow-card: 0 2px 8px -2px hsl(240 5% 26% / 0.08);
+    --shadow-hover: 0 4px 16px -4px hsl(240 5% 26% / 0.12);
+    --shadow-focus: 0 0 0 3px hsl(262 88% 51% / 0.12);
 
     /* Transitions */
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
@@ -106,7 +116,7 @@ All colors MUST be HSL.
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
   
-  /* Custom scrollbar */
+  /* Custom scrollbar - Light theme */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -121,7 +131,7 @@ All colors MUST be HSL.
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+    background: hsl(var(--primary) / 0.3);
   }
 
   /* Add line clamp utilities */

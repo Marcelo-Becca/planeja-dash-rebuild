@@ -10,37 +10,37 @@ interface TaskCardProps {
 const statusConfig = {
   pending: {
     label: "Pendente",
-    color: "text-gray-400",
-    bgColor: "bg-gray-500/10",
-    borderColor: "border-gray-500/20",
+    color: "text-chart-pending",
+    bgColor: "bg-chart-pending/10",
+    borderColor: "border-chart-pending/20",
     icon: Clock
   },
   "in-progress": {
     label: "Em Andamento",
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/10", 
-    borderColor: "border-blue-500/20",
+    color: "text-chart-progress",
+    bgColor: "bg-chart-progress/10", 
+    borderColor: "border-chart-progress/20",
     icon: Clock
   },
   "under-review": {
     label: "Em Revisão",
-    color: "text-purple-400",
-    bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/20",
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    borderColor: "border-primary/20",
     icon: AlertTriangle
   },
   completed: {
     label: "Concluída",
-    color: "text-green-400",
-    bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/20",
+    color: "text-chart-completed",
+    bgColor: "bg-chart-completed/10",
+    borderColor: "border-chart-completed/20",
     icon: CheckCircle2
   },
   overdue: {
     label: "Atrasada",
-    color: "text-red-400",
-    bgColor: "bg-red-500/10",
-    borderColor: "border-red-500/20",
+    color: "text-chart-overdue",
+    bgColor: "bg-chart-overdue/10",
+    borderColor: "border-chart-overdue/20",
     icon: AlertTriangle
   }
 };
@@ -48,15 +48,15 @@ const statusConfig = {
 const priorityConfig = {
   low: {
     label: "Baixa",
-    color: "text-green-600"
+    color: "text-chart-completed"
   },
   medium: {
     label: "Média", 
-    color: "text-yellow-600"
+    color: "text-chart-pending"
   },
   high: {
     label: "Alta",
-    color: "text-red-600"
+    color: "text-chart-overdue"
   }
 };
 
@@ -102,9 +102,9 @@ export default function TaskCard({ task }: TaskCardProps) {
           <div className="flex items-center space-x-3">
             <div className="flex items-center">
               <div className={cn("w-2 h-2 rounded-full mr-2", {
-                "bg-green-500": priority.color.includes('green'),
-                "bg-yellow-500": priority.color.includes('yellow'), 
-                "bg-red-500": priority.color.includes('red')
+                "bg-chart-completed": task.priority === 'low',
+                "bg-chart-pending": task.priority === 'medium', 
+                "bg-chart-overdue": task.priority === 'high'
               })} />
               <span className="text-xs text-muted-foreground">
                 Prioridade {priority.label}
@@ -115,7 +115,7 @@ export default function TaskCard({ task }: TaskCardProps) {
           <div className="flex items-center text-xs text-muted-foreground">
             <Calendar className="w-3 h-3 mr-1" />
             <span className={cn(
-              isOverdue && "text-red-400 font-medium"
+              isOverdue && "text-chart-overdue font-medium"
             )}>
               {task.deadline.toLocaleDateString('pt-BR')}
             </span>
