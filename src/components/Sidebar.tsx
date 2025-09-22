@@ -21,7 +21,7 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { id: "projects", label: "Projetos", icon: FolderKanban, path: "/projects" },
   { id: "tasks", label: "Tarefas", icon: CheckSquare, path: "/tasks" },
   { id: "reports", label: "Relatórios", icon: BarChart3, path: "/reports" },
@@ -36,6 +36,10 @@ export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps
   const getActiveItem = () => {
     const currentPath = location.pathname;
     const activeMenuItem = menuItems.find(item => item.path === currentPath);
+    // If we're on root path "/", consider it as dashboard
+    if (currentPath === "/" && !activeMenuItem) {
+      return "dashboard";
+    }
     return activeMenuItem?.id || "dashboard";
   };
 
