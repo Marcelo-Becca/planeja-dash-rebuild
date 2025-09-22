@@ -1,6 +1,15 @@
 // Sample projects, tasks and teams using the test users
-import { mockUsers } from './mockData';
-import { Project, Task, Team, TeamMember, TeamActivity } from './mockData';
+import { testUsers } from './testUsers';
+import { Project, Task, Team, TeamMember, TeamActivity, User } from './mockData';
+
+// Create mockUsers here to avoid circular dependency
+export const mockUsers: User[] = testUsers.map(testUser => ({
+  id: testUser.id,
+  name: testUser.name,
+  email: testUser.email,
+  avatar: testUser.avatar || testUser.name.split(' ').map(n => n[0]).join(''),
+  role: testUser.role
+}));
 
 // Helper function to get user by index
 const getUser = (index: number) => mockUsers[index % mockUsers.length];

@@ -96,19 +96,11 @@ export interface TeamActivity {
   timestamp: Date;
 }
 
-// Mock users - Convert test users to mockUsers format for system integration
-import { testUsers } from './testUsers';
+// Import sample data and mockUsers
+import { sampleProjects, sampleTasks, sampleTeams, mockUsers } from './sampleData';
 
-export const mockUsers: User[] = testUsers.map(testUser => ({
-  id: testUser.id,
-  name: testUser.name,
-  email: testUser.email,
-  avatar: testUser.avatar || testUser.name.split(' ').map(n => n[0]).join(''),
-  role: testUser.role
-}));
-
-// Import sample data
-import { sampleProjects, sampleTasks, sampleTeams } from './sampleData';
+// Re-export mockUsers for compatibility
+export { mockUsers };
 
 // Mock projects - using sample data with test users
 export const mockProjects: Project[] = sampleProjects;
