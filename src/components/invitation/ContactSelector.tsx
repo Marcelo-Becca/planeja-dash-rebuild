@@ -26,53 +26,21 @@ interface ContactSelectorProps {
 }
 
 // Mock circle contacts - in a real app, this would come from an API or contacts system
-const mockCircleContacts: CircleContact[] = [
-  {
-    id: 'contact_1',
-    name: 'Ana Silva',
-    email: 'ana.silva@empresa.com',
-    avatar: 'AS',
-    role: 'Gerente de Projetos',
-    department: 'Tecnologia',
-    company: 'Empresa Tech'
-  },
-  {
-    id: 'contact_2',
-    name: 'Carlos Santos',
-    email: 'carlos.santos@empresa.com',
-    avatar: 'CS',
-    role: 'Desenvolvedor Sênior',
-    department: 'Desenvolvimento',
-    company: 'Empresa Tech'
-  },
-  {
-    id: 'contact_3',
-    name: 'Marina Costa',
-    email: 'marina.costa@parceira.com',
-    avatar: 'MC',
-    role: 'Product Manager',
-    department: 'Produto',
-    company: 'Parceira Ltda'
-  },
-  {
-    id: 'contact_4',
-    name: 'Roberto Lima',
-    email: 'roberto.lima@consultoria.com',
-    avatar: 'RL',
-    role: 'Consultor',
-    department: 'Consultoria',
-    company: 'Consultoria Pro'
-  },
-  {
-    id: 'contact_5',
-    name: 'Julia Ferreira',
-    email: 'julia.ferreira@startup.io',
-    avatar: 'JF',
-    role: 'UX Designer',
-    department: 'Design',
-    company: 'Startup Inovação'
-  }
-];
+import { mockUsers } from '@/data/mockData';
+
+const mockCircleContacts: CircleContact[] = mockUsers.map(user => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  avatar: user.avatar,
+  role: user.role,
+  department: user.role.includes('Manager') ? 'Gestão' : 
+             user.role.includes('Developer') || user.role.includes('Tech') ? 'Desenvolvimento' :
+             user.role.includes('Designer') ? 'Design' :
+             user.role.includes('QA') || user.role.includes('Analyst') ? 'Qualidade' :
+             user.role.includes('DevOps') ? 'Infraestrutura' : 'Geral',
+  company: 'Planeja+'
+}));
 
 export function ContactSelector({ 
   onSelect, 
@@ -84,9 +52,9 @@ export function ContactSelector({
   const [contacts, setContacts] = useState<CircleContact[]>([]);
 
   useEffect(() => {
-    // Simulate loading contacts from circle/network
-    // In a real app, this would be an API call
-    setContacts(mockCircleContacts);
+  // Simulate loading contacts from circle/network
+  // In a real app, this would be an API call
+  setContacts(mockCircleContacts);
   }, []);
 
   const handleSelect = (contact: CircleContact) => {

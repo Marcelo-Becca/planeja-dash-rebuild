@@ -1,16 +1,15 @@
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import Sidebar from "./Sidebar";
 import DaySummaryCard from "./DaySummaryCard";
 import WeeklyProgressCard from "./WeeklyProgressCard";
 
-// Mock user data - in a real app this would come from authentication
-const userData = {
-  name: "Marina Santos",
-  firstName: "Marina"
-};
-
 export default function Dashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth < 768);
+  const { user } = useAuth();
+  
+  // Get user's first name
+  const firstName = user?.displayName || user?.name?.split(' ')[0] || 'Usuário';
 
   return (
     <div className="min-h-screen bg-background flex w-full overflow-hidden">
@@ -37,7 +36,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-xl md:text-2xl font-semibold text-foreground">
-                  Bem-vindo(a), <span className="text-primary">{userData.firstName}</span>!
+                  Bem-vindo(a), <span className="text-primary">{firstName}</span>!
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
                   Aqui está um resumo da sua produtividade hoje

@@ -16,6 +16,7 @@ import TeamDetail from "./pages/TeamDetail";
 import Reports from "./pages/Reports";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
+import Invitations from "./pages/Invitations";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/teams/:id" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+            <Route path="/invitations" element={<ProtectedRoute><Invitations /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             
             {/* Public Routes - no authentication required */}

@@ -7,6 +7,7 @@ import {
   BarChart3, 
   Users, 
   Calendar,
+  Mail,
   Settings,
   Menu,
   X
@@ -27,6 +28,7 @@ const menuItems = [
   { id: "reports", label: "Relatórios", icon: BarChart3, path: "/reports" },
   { id: "teams", label: "Equipes", icon: Users, path: "/teams" },
   { id: "calendar", label: "Calendário", icon: Calendar, path: "/calendar" },
+  { id: "invitations", label: "Convites", icon: Mail, path: "/invitations" },
   { id: "settings", label: "Configurações", icon: Settings, path: "/settings" },
 ];
 

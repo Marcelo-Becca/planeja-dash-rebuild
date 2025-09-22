@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InvitationButton } from '@/components/invitation/InvitationButton';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,7 @@ import {
   Target
 } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
+import { useAuth } from '@/contexts/AuthContext';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
@@ -47,6 +49,7 @@ export default function TeamDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { teams, tasks, projects, updateTeam, deleteTeam, users } = useLocalData();
+  const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -191,6 +194,16 @@ export default function TeamDetail() {
             </div>
             
             <div className="flex items-center gap-2">
+              <InvitationButton
+                target={{
+                  type: 'team',
+                  id: team.id,
+                  name: team.name
+                }}
+                currentUser={user as any}
+                variant="outline"
+                size="sm"
+              />
               <Button variant="outline" size="sm" className="gap-2">
                 <Edit className="w-4 h-4" />
                 Editar Equipe

@@ -96,23 +96,34 @@ export interface TeamActivity {
   timestamp: Date;
 }
 
-// Mock users - cleared as requested (backup saved in backup_removed_data.json)
-export const mockUsers: User[] = [];
+// Mock users - Convert test users to mockUsers format for system integration
+import { testUsers } from './testUsers';
 
-// Mock projects - cleared as requested (backup saved in backup_removed_data.json)
-export const mockProjects: Project[] = [];
+export const mockUsers: User[] = testUsers.map(testUser => ({
+  id: testUser.id,
+  name: testUser.name,
+  email: testUser.email,
+  avatar: testUser.avatar || testUser.name.split(' ').map(n => n[0]).join(''),
+  role: testUser.role
+}));
 
-// Mock tasks - cleared as requested (backup saved in backup_removed_data.json)
-export const mockTasks: Task[] = [];
+// Import sample data
+import { sampleProjects, sampleTasks, sampleTeams } from './sampleData';
 
-// Mock teams - cleared as requested (backup saved in backup_removed_data.json)
-export const mockTeams: Team[] = [];
+// Mock projects - using sample data with test users
+export const mockProjects: Project[] = sampleProjects;
 
-// Current user (for profile) - using empty default
-export const currentUser: User = {
+// Mock tasks - using sample data with test users
+export const mockTasks: Task[] = sampleTasks;
+
+// Mock teams - using sample data with test users
+export const mockTeams: Team[] = sampleTeams;
+
+// Current user (for profile) - default to first test user
+export const currentUser: User = mockUsers[0] || {
   id: 'current',
-  name: 'Usuário',
-  email: 'usuario@planeja.com',
-  avatar: 'U',
-  role: 'Usuário'
+  name: 'Ana Silva',
+  email: 'ana.silva@planejaplus.com',
+  avatar: 'AS',
+  role: 'Product Manager'
 };

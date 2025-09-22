@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { InvitationButton } from '@/components/invitation/InvitationButton';
 import { 
   ArrowLeft, 
   Edit3, 
@@ -23,6 +24,7 @@ import {
   Settings
 } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
+import { useAuth } from '@/contexts/AuthContext';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
@@ -40,6 +42,7 @@ export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { projects, tasks, updateProject, deleteProject, updateTask, users } = useLocalData();
+  const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -171,6 +174,16 @@ export default function ProjectDetail() {
             </div>
             
             <div className="flex items-center gap-2">
+              <InvitationButton
+                target={{
+                  type: 'project',
+                  id: project.id,
+                  name: project.name
+                }}
+                currentUser={user as any}
+                variant="outline"
+                size="sm"
+              />
               <Button variant="outline" size="sm" className="gap-2">
                 <Edit3 className="w-4 h-4" />
                 Editar
