@@ -3,6 +3,7 @@ import { Settings, User, LogOut, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import TestUserSwitcher from "./TestUserSwitcher";
 
 interface UserProfileProps {
   isCollapsed: boolean;
@@ -85,6 +86,9 @@ export default function UserProfile({ isCollapsed }: UserProfileProps) {
               <Settings className="w-4 h-4 mr-3" />
               Configurações
             </Link>
+            <div className="px-3 py-2">
+              <TestUserSwitcher />
+            </div>
             <div className="border-t border-sidebar-border my-1" />
             <button 
               onClick={() => {

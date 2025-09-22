@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { testUsers, defaultTestUser, type TestUser } from '@/data/testUsers';
 
 interface User {
   id: string;
@@ -17,6 +18,8 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  testUsers: TestUser[];
+  switchToTestUser: (testUser: TestUser) => void;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
@@ -51,17 +54,8 @@ const MOCK_USERS_KEY = 'planeja_mock_users';
 const CURRENT_USER_KEY = 'planeja_current_user';
 const LOGIN_ATTEMPTS_KEY = 'planeja_login_attempts';
 
-// Usuário de demonstração
-const DEMO_USER: User = {
-  id: 'demo-user-1',
-  name: 'João Silva',
-  email: 'joao@exemplo.com',
-  displayName: 'João',
-  role: 'Gerente de Projetos',
-  company: 'Empresa Demo',
-  emailVerified: true,
-  createdAt: new Date('2024-01-15'),
-};
+// Usuário padrão para demonstração
+const DEMO_USER: User = defaultTestUser;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -123,8 +117,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Simular validação de credenciais
       const isValidCredential = (
-        (email === 'joao@exemplo.com' || email === 'joao') && password === '123456789A@' ||
-        (email === 'demo@planeja.com' || email === 'demo') && password === 'Demo123!'
+        (email === 'demo@planejaplus.com' || email === 'demo') && password === 'Demo123!' ||
+        testUsers.some(testUser => 
+          (testUser.email === email || testUser.name.toLowerCase() === email.toLowerCase()) && 
+          password === 'Test123!'
+        )
       );
 
       if (!isValidCredential) {
@@ -146,7 +143,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Login bem-sucedido
-      const loggedUser = { ...DEMO_USER };
+      let loggedUser: User;
+      
+      // Check if it's a test user login
+      const testUser = testUsers.find(tu => 
+        tu.email === email || tu.name.toLowerCase() === email.toLowerCase()
+      );
+      
+      if (testUser) {
+        loggedUser = testUser;
+      } else {
+        loggedUser = { ...DEMO_USER };
+      }
+      
       if (!loggedUser.emailVerified) {
         throw new Error('Conta não verificada. Verifique seu e-mail antes de continuar.');
       }
@@ -184,7 +193,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await simulateDelay(2000);
       
       // Simular verificação de e-mail existente
-      if (userData.email === 'joao@exemplo.com' || userData.email === 'teste@existe.com') {
+      if (testUsers.some(tu => tu.email === userData.email) || userData.email === 'teste@existe.com') {
         throw new Error('E-mail já cadastrado. Faça login ou recupere sua senha.');
       }
 
@@ -226,14 +235,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsEmailVerified(false);
-    localStorage.removeItem(CURRENT_USER_KEY);
+  const switchToTestUser = (testUser: TestUser) => {
+    const user: User = testUser;
+    setUser(user);
+    setIsEmailVerified(true);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
     
     toast({
-      title: "Logout realizado",
-      description: "Você foi desconectado com sucesso.",
+      title: "Usuário alterado",
+      description: `Agora você está logado como ${testUser.name}`,
     });
   };
 
@@ -291,6 +301,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const logout = () => {
+    setUser(null);
+    setIsEmailVerified(false);
+    localStorage.removeItem(CURRENT_USER_KEY);
+    
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso.",
+    });
+  };
+
   const resendVerificationEmail = async () => {
     setIsLoading(true);
     
@@ -319,6 +340,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isLoading,
+        testUsers,
+        switchToTestUser,
         login,
         register,
         logout,

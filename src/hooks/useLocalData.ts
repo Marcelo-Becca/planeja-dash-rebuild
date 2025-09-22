@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Project, Task, Team, User } from '@/data/mockData';
+import { testUsers } from '@/data/testUsers';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Types for local storage
@@ -19,7 +20,13 @@ const getInitialData = (): LocalStorageData => ({
   projects: [],
   tasks: [],
   teams: [],
-  users: [],
+  users: testUsers.map(tu => ({
+    id: tu.id,
+    name: tu.name,
+    email: tu.email,
+    avatar: tu.avatar || tu.name.split(' ').map(n => n[0]).join(''),
+    role: tu.role
+  })), // Always include test users as regular Users
   lastUpdate: new Date().toISOString()
 });
 
@@ -70,7 +77,8 @@ export function useLocalData() {
   );
 
   // Save to localStorage whenever data changes (only if user is logged in)
-  useEffect(() => {
+  // useEffect removed to prevent infinite re-renders, data is saved on each mutation instead
+  const saveDataIfNeeded = useCallback(() => {
     if (user) {
       saveData(data, user.id);
     }
@@ -83,30 +91,42 @@ export function useLocalData() {
       id: generateId(),
     };
 
-    setData(prev => ({
-      ...prev,
-      projects: [...prev.projects, newProject]
-    }));
+    setData(prev => {
+      const updated = {
+        ...prev,
+        projects: [...prev.projects, newProject]
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
 
     return newProject;
-  }, []);
+  }, [user]);
 
   const updateProject = useCallback((id: string, updates: Partial<Project>) => {
-    setData(prev => ({
-      ...prev,
-      projects: prev.projects.map(p => 
-        p.id === id ? { ...p, ...updates } : p
-      )
-    }));
-  }, []);
+    setData(prev => {
+      const updated = {
+        ...prev,
+        projects: prev.projects.map(p => 
+          p.id === id ? { ...p, ...updates } : p
+        )
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
+  }, [user]);
 
   const deleteProject = useCallback((id: string) => {
-    setData(prev => ({
-      ...prev,
-      projects: prev.projects.filter(p => p.id !== id),
-      tasks: prev.tasks.filter(t => t.projectId !== id)
-    }));
-  }, []);
+    setData(prev => {
+      const updated = {
+        ...prev,
+        projects: prev.projects.filter(p => p.id !== id),
+        tasks: prev.tasks.filter(t => t.projectId !== id)
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
+  }, [user]);
 
   // Tasks
   const addTask = useCallback((taskData: Omit<Task, 'id'>) => {
@@ -136,15 +156,18 @@ export function useLocalData() {
         });
       }
 
-      return {
+      const updated = {
         ...prev,
         tasks: updatedTasks,
         projects: updatedProjects
       };
+
+      if (user) saveData(updated, user.id);
+      return updated;
     });
 
     return newTask;
-  }, []);
+  }, [user]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setData(prev => {
@@ -172,13 +195,16 @@ export function useLocalData() {
         });
       }
 
-      return {
+      const updated = {
         ...prev,
         tasks: updatedTasks,
         projects: updatedProjects
       };
+
+      if (user) saveData(updated, user.id);
+      return updated;
     });
-  }, []);
+  }, [user]);
 
   const deleteTask = useCallback((id: string) => {
     setData(prev => {
@@ -202,13 +228,16 @@ export function useLocalData() {
         });
       }
 
-      return {
+      const updated = {
         ...prev,
         tasks: updatedTasks,
         projects: updatedProjects
       };
+
+      if (user) saveData(updated, user.id);
+      return updated;
     });
-  }, []);
+  }, [user]);
 
   // Teams
   const addTeam = useCallback((teamData: Omit<Team, 'id'>) => {
@@ -217,29 +246,41 @@ export function useLocalData() {
       id: generateId(),
     };
 
-    setData(prev => ({
-      ...prev,
-      teams: [...prev.teams, newTeam]
-    }));
+    setData(prev => {
+      const updated = {
+        ...prev,
+        teams: [...prev.teams, newTeam]
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
 
     return newTeam;
-  }, []);
+  }, [user]);
 
   const updateTeam = useCallback((id: string, updates: Partial<Team>) => {
-    setData(prev => ({
-      ...prev,
-      teams: prev.teams.map(t => 
-        t.id === id ? { ...t, ...updates } : t
-      )
-    }));
-  }, []);
+    setData(prev => {
+      const updated = {
+        ...prev,
+        teams: prev.teams.map(t => 
+          t.id === id ? { ...t, ...updates } : t
+        )
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
+  }, [user]);
 
   const deleteTeam = useCallback((id: string) => {
-    setData(prev => ({
-      ...prev,
-      teams: prev.teams.filter(t => t.id !== id)
-    }));
-  }, []);
+    setData(prev => {
+      const updated = {
+        ...prev,
+        teams: prev.teams.filter(t => t.id !== id)
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
+  }, [user]);
 
   // Users
   const addUser = useCallback((userData: Omit<User, 'id'>) => {
@@ -248,13 +289,17 @@ export function useLocalData() {
       id: generateId(),
     };
 
-    setData(prev => ({
-      ...prev,
-      users: [...prev.users, newUser]
-    }));
+    setData(prev => {
+      const updated = {
+        ...prev,
+        users: [...prev.users, newUser]
+      };
+      if (user) saveData(updated, user.id);
+      return updated;
+    });
 
     return newUser;
-  }, []);
+  }, [user]);
 
   // Utility functions
   const clearAllData = useCallback(() => {
@@ -262,6 +307,7 @@ export function useLocalData() {
     setData(initialData);
     if (user) {
       localStorage.removeItem(`planeja-data-${user.id}`);
+      saveData(initialData, user.id);
     }
   }, [user]);
 

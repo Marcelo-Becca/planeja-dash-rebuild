@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import TestUserSwitcher from '@/components/TestUserSwitcher';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -222,7 +223,7 @@ const Login = () => {
             </form>
 
             {/* Demo Helper */}
-            <div className="mt-4 pt-4 border-t border-border">
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
               <Button
                 variant="ghost"
                 size="sm"
@@ -231,6 +232,13 @@ const Login = () => {
               >
                 💡 Preencher dados de demonstração
               </Button>
+              
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground mb-2">
+                  Ou experimente com diferentes perfis:
+                </p>
+                <TestUserSwitcher />
+              </div>
             </div>
 
             {/* Sign Up Link */}
