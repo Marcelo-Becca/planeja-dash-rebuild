@@ -24,6 +24,7 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
+  // Email verification methods (deprecated - kept for dev compatibility)
   verifyEmail: (token?: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   isEmailVerified: boolean;
@@ -156,9 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loggedUser = { ...DEMO_USER };
       }
       
-      if (!loggedUser.emailVerified) {
-        throw new Error('Conta não verificada. Verifique seu e-mail antes de continuar.');
-      }
+      // Email verification check removed - all users are auto-verified
 
       setUser(loggedUser);
       setIsEmailVerified(true);
@@ -197,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('E-mail já cadastrado. Faça login ou recupere sua senha.');
       }
 
-      // Criar novo usuário
+      // Criar novo usuário já verificado
       const newUser: User = {
         id: `user-${Date.now()}`,
         name: userData.name,
@@ -206,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phone: userData.phone,
         role: userData.role,
         company: userData.company,
-        emailVerified: false,
+        emailVerified: true, // Auto-verified in public environment
         createdAt: new Date(),
       };
 
@@ -214,13 +213,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const existingUsers = JSON.parse(localStorage.getItem(MOCK_USERS_KEY) || '[]');
       existingUsers.push(newUser);
       localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(existingUsers));
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
       
       setUser(newUser);
-      setIsEmailVerified(false);
+      setIsEmailVerified(true);
       
       toast({
         title: "Conta criada com sucesso!",
-        description: "Verifique seu e-mail para ativar sua conta.",
+        description: "Você já está logado. Bem-vindo ao Planeja+!",
       });
 
     } catch (error) {
@@ -271,34 +271,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Deprecated: Email verification removed from public interface
   const verifyEmail = async (token?: string) => {
-    setIsLoading(true);
-    
-    try {
-      await simulateDelay();
+    // Legacy compatibility for dev tools
+    if (user && !user.emailVerified) {
+      const updatedUser = { ...user, emailVerified: true };
+      setUser(updatedUser);
+      setIsEmailVerified(true);
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
       
-      if (user) {
-        const updatedUser = { ...user, emailVerified: true };
-        setUser(updatedUser);
-        setIsEmailVerified(true);
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-        
-        toast({
-          title: "E-mail verificado!",
-          description: "Sua conta foi ativada com sucesso.",
-        });
-      }
-
-    } catch (error) {
       toast({
-        title: "Erro na verificação",
-        description: "Link inválido ou expirado.",
-        variant: "destructive",
+        title: "Verificação simulada",
+        description: "Para compatibilidade dev - usuário verificado.",
       });
-      throw error;
-    } finally {
-      setIsLoading(false);
     }
+    return Promise.resolve();
   };
 
   const logout = () => {
@@ -312,27 +299,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  // Deprecated: Email verification removed from public interface
   const resendVerificationEmail = async () => {
-    setIsLoading(true);
-    
-    try {
-      await simulateDelay();
-      
-      toast({
-        title: "E-mail reenviado!",
-        description: "Verifique sua caixa de entrada em alguns minutos.",
-      });
-
-    } catch (error) {
-      toast({
-        title: "Erro ao reenviar",
-        description: "Tente novamente em alguns minutos.",
-        variant: "destructive",
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+    // Legacy compatibility - no-op for dev tools
+    toast({
+      title: "Funcionalidade removida",
+      description: "Verificação por e-mail não é mais necessária.",
+    });
+    return Promise.resolve();
   };
 
   return (

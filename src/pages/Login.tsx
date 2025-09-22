@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import TestUserSwitcher from '@/components/TestUserSwitcher';
+import DevPanel from '@/components/DevPanel';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -76,13 +76,19 @@ const Login = () => {
     }
   };
 
-  const handleQuickFill = () => {
-    setFormData({
-      email: 'joao@exemplo.com',
-      password: '123456789A@',
-      rememberMe: false,
-    });
-  };
+  // Dev mode quick fill handler
+  useEffect(() => {
+    const handleDevQuickFill = (event: CustomEvent) => {
+      setFormData({
+        email: event.detail.email,
+        password: event.detail.password,
+        rememberMe: false,
+      });
+    };
+
+    window.addEventListener('devQuickFillLogin', handleDevQuickFill as EventListener);
+    return () => window.removeEventListener('devQuickFillLogin', handleDevQuickFill as EventListener);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
@@ -95,12 +101,7 @@ const Login = () => {
 
         <Card className="shadow-card-hover transition-all duration-300">
           <CardHeader className="pb-6">
-            {/* Modo demonstrativo tag */}
-            <div className="text-center mb-4">
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 border border-amber-200">
-                🔧 Modo demonstrativo: fluxos simulados
-              </span>
-            </div>
+            {/* Dev mode indicator removed from public interface */}
           </CardHeader>
 
           <CardContent>
@@ -222,23 +223,11 @@ const Login = () => {
               </Button>
             </form>
 
-            {/* Demo Helper */}
-            <div className="mt-4 pt-4 border-t border-border space-y-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleQuickFill}
-                className="w-full text-xs"
-              >
-                💡 Preencher dados de demonstração
-              </Button>
-              
-              <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-2">
-                  Ou experimente com diferentes perfis:
-                </p>
-                <TestUserSwitcher />
-              </div>
+            {/* Demo tools moved to dev panel */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-center text-xs text-muted-foreground">
+                Precisa de uma conta de demonstração? Ative o modo desenvolvedor.
+              </p>
             </div>
 
             {/* Sign Up Link */}
@@ -250,6 +239,9 @@ const Login = () => {
             </p>
           </CardContent>
         </Card>
+
+        {/* Dev Panel */}
+        <DevPanel />
       </div>
     </div>
   );

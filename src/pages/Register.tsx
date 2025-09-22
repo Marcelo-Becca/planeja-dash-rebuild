@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User, Phone, Building, Loader2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import DevPanel from '@/components/DevPanel';
 
 interface FormData {
   name: string;
@@ -183,7 +184,8 @@ const Register = () => {
         preferences: formData.preferences,
       });
       
-      navigate('/verify-email');
+      // Redirect to dashboard instead of email verification
+      navigate('/');
     } catch (error) {
       // Erros já tratados no contexto
     } finally {
@@ -191,16 +193,22 @@ const Register = () => {
     }
   };
 
-  const handleQuickRegister = () => {
-    setFormData(prev => ({
-      ...prev,
-      name: 'Maria Silva',
-      email: 'maria@exemplo.com',
-      password: 'MinhaSenh@123',
-      confirmPassword: 'MinhaSenh@123',
-      acceptTerms: true,
-    }));
-  };
+  // Dev mode quick fill handler
+  useEffect(() => {
+    const handleDevQuickFill = (event: CustomEvent) => {
+      setFormData(prev => ({
+        ...prev,
+        name: event.detail.name,
+        email: event.detail.email,
+        password: event.detail.password,
+        confirmPassword: event.detail.confirmPassword,
+        acceptTerms: true,
+      }));
+    };
+
+    window.addEventListener('devQuickFillRegister', handleDevQuickFill as EventListener);
+    return () => window.removeEventListener('devQuickFillRegister', handleDevQuickFill as EventListener);
+  }, []);
 
   const passwordStrength = getPasswordStrength(formData.password);
 
@@ -226,12 +234,7 @@ const Register = () => {
           {step === 1 && (
             <>
               <CardHeader className="pb-6">
-                {/* Modo demonstrativo tag */}
-                <div className="text-center mb-4">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-amber-100 text-amber-800 border border-amber-200">
-                    🔧 Modo demonstrativo: fluxos simulados
-                  </span>
-                </div>
+                {/* Dev mode indicator removed from public interface */}
               </CardHeader>
 
               <CardContent>
@@ -388,14 +391,9 @@ const Register = () => {
                 </form>
 
                 <div className="mt-4 pt-4 border-t border-border">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleQuickRegister}
-                    className="w-full text-xs"
-                  >
-                    💡 Preencher dados de demonstração
-                  </Button>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Ative o modo desenvolvedor para ferramentas de preenchimento automático.
+                  </p>
                 </div>
 
                 <p className="text-center text-sm text-muted-foreground mt-4">
@@ -590,6 +588,9 @@ const Register = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Dev Panel */}
+        <DevPanel />
       </div>
     </div>
   );

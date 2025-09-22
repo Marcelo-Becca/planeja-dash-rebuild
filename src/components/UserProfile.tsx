@@ -86,9 +86,7 @@ export default function UserProfile({ isCollapsed }: UserProfileProps) {
               <Settings className="w-4 h-4 mr-3" />
               Configurações
             </Link>
-            <div className="px-3 py-2">
-              <TestUserSwitcher />
-            </div>
+            {/* TestUserSwitcher moved to dev panel */}
             <div className="border-t border-sidebar-border my-1" />
             <button 
               onClick={() => {
