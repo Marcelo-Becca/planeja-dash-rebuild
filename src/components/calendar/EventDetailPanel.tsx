@@ -77,7 +77,7 @@ export function EventDetailPanel({
 
   const project = event.projectId ? projects.find(p => p.id === event.projectId) : null;
   const team = event.teamId ? teams.find(t => t.id === event.teamId) : null;
-  const participants = event.participants.map(id => users.find(u => u.id === id)).filter(Boolean);
+  const participants = (event.participants || []).map(id => users.find(u => u.id === id)).filter(Boolean);
 
   const formatReminderTime = (minutes: number) => {
     if (minutes === 0) return 'No horário';
@@ -222,7 +222,7 @@ export function EventDetailPanel({
           )}
 
           {/* Reminders */}
-          {event.reminders.length > 0 && (
+          {(event.reminders || []).length > 0 && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -231,7 +231,7 @@ export function EventDetailPanel({
                   Lembretes
                 </h4>
                 <div className="space-y-1">
-                  {event.reminders.map((reminder) => (
+                  {(event.reminders || []).map((reminder) => (
                     <div key={reminder.id} className="text-sm text-muted-foreground flex items-center space-x-2">
                       <div className={cn(
                         'w-2 h-2 rounded-full',
