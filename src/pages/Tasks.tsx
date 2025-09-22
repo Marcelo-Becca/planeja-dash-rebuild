@@ -3,16 +3,17 @@ import TaskCard from "@/components/TaskCard";
 import CreateTaskModal from "@/components/CreateTaskModal";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search } from "lucide-react";
-import { mockTasks } from "@/data/mockData";
+import { useLocalData } from "@/hooks/useLocalData";
 import { useState } from "react";
 
 export default function Tasks() {
+  const { tasks } = useLocalData();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const filteredTasks = mockTasks.filter(task => {
+  const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          task.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || task.status === statusFilter;

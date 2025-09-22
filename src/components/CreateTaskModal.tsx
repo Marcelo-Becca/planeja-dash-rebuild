@@ -28,10 +28,12 @@ import {
   Copy
 } from "lucide-react";
 import { mockProjects, mockUsers } from "@/data/mockData";
+import { useLocalData } from "@/hooks/useLocalData";
 
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedProjectId?: string;
 }
 
 interface SubTask {
@@ -64,15 +66,16 @@ const statusOptions = [
   { value: "under-review", label: "Em revisão" }
 ];
 
-export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalProps) {
+export default function CreateTaskModal({ open, onOpenChange, preselectedProjectId }: CreateTaskModalProps) {
   const { toast } = useToast();
+  const { projects, users, addTask } = useLocalData();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     description: "",
-    projectId: "",
+    projectId: preselectedProjectId || "",
     assigneeIds: [],
     priority: "medium",
     status: "pending",
@@ -114,9 +117,42 @@ export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalP
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Create task with local data
+      const assignedUsers = users.filter(u => formData.assigneeIds.includes(u.id));
+      const createdBy = users[0]; // Use first user as creator for demo
+      
+      const newTask = addTask({
+        title: formData.title,
+        description: formData.description,
+        status: formData.status as any,
+        priority: formData.priority,
+        deadline: formData.dueDate!,
+        createdAt: new Date(),
+        createdBy,
+        assignedTo: assignedUsers,
+        projectId: formData.projectId || 'independent',
+        comments: []
+      });
+      
       toast({
         title: "Tarefa criada com sucesso!",
         description: `A tarefa "${formData.title}" foi adicionada à sua lista.`,
+        action: saveAndCreate ? undefined : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              toast({
+                title: "Ação desfeita",
+                description: "Tarefa removida (simulação)",
+              });
+            }}
+            className="gap-1"
+          >
+            <Undo2 className="w-3 h-3" />
+            Desfazer
+          </Button>
+        ),
       });
 
       if (saveAndCreate) {
@@ -207,11 +243,11 @@ export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalP
   };
 
   const getSelectedProject = () => {
-    return mockProjects.find(p => p.id === formData.projectId);
+    return projects.find(p => p.id === formData.projectId);
   };
 
   const getSelectedMembers = () => {
-    return mockUsers.filter(m => formData.assigneeIds.includes(m.id));
+    return users.filter(m => formData.assigneeIds.includes(m.id));
   };
 
   return (
@@ -277,7 +313,7 @@ export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalP
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="independent">Tarefa independente</SelectItem>
-                  {mockProjects.map((project) => (
+                  {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
                     </SelectItem>
@@ -308,7 +344,7 @@ export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalP
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm">Membros da equipe</h4>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {mockUsers.map((member) => (
+                      {users.map((member) => (
                         <div key={member.id} className="flex items-center space-x-2">
                           <Checkbox
                             id={member.id}
@@ -317,7 +353,7 @@ export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalP
                           />
                           <Avatar className="h-6 w-6">
                             <AvatarImage src={member.avatar} />
-                            <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            <AvatarFallback>{member.avatar}</AvatarFallback>
                           </Avatar>
                           <label htmlFor={member.id} className="text-sm cursor-pointer flex-1">
                             {member.name} - {member.role}
@@ -336,7 +372,7 @@ export default function CreateTaskModal({ open, onOpenChange }: CreateTaskModalP
                     <Badge key={member.id} variant="secondary" className="flex items-center gap-1">
                       <Avatar className="h-4 w-4">
                         <AvatarImage src={member.avatar} />
-                        <AvatarFallback className="text-xs">{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        <AvatarFallback className="text-xs">{member.avatar}</AvatarFallback>
                       </Avatar>
                       <span className="text-xs">{member.name}</span>
                       <X 

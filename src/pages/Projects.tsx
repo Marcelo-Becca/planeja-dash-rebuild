@@ -1,15 +1,18 @@
 import Layout from "@/components/Layout";
 import ProjectCard from "@/components/ProjectCard";
+import CreateProjectModal from "@/components/CreateProjectModal";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search } from "lucide-react";
-import { mockProjects } from "@/data/mockData";
+import { useLocalData } from "@/hooks/useLocalData";
 import { useState } from "react";
 
 export default function Projects() {
+  const { projects } = useLocalData();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const filteredProjects = mockProjects.filter(project => {
+  const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
@@ -32,7 +35,7 @@ export default function Projects() {
               </p>
             </div>
             
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="w-4 h-4" />
               Novo Projeto
             </Button>
@@ -90,7 +93,7 @@ export default function Projects() {
               <p className="text-muted-foreground mb-4">
                 Tente ajustar os filtros ou criar um novo projeto
               </p>
-              <Button>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Criar Primeiro Projeto
               </Button>
@@ -98,6 +101,12 @@ export default function Projects() {
           )}
         </div>
       </div>
+
+      {/* Create Project Modal */}
+      <CreateProjectModal 
+        open={isCreateModalOpen} 
+        onOpenChange={setIsCreateModalOpen}
+      />
     </Layout>
   );
 }

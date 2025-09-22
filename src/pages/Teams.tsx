@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
+import CreateTeamModal from '@/components/CreateTeamModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,16 +13,19 @@ import {
 } from '@/components/ui/select';
 import { TeamCard } from '@/components/TeamCard';
 import { Plus, Search, Users, Filter } from 'lucide-react';
-import { mockTeams, Team } from '@/data/mockData';
+import { useLocalData } from '@/hooks/useLocalData';
+import { Team } from '@/data/mockData';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Teams() {
+  const { teams } = useLocalData();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredTeams = useMemo(() => {
-    return mockTeams.filter(team => {
+    return teams.filter(team => {
       const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           team.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || team.status === statusFilter;
@@ -31,10 +35,7 @@ export default function Teams() {
   }, [searchTerm, statusFilter]);
 
   const handleCreateTeam = () => {
-    toast({
-      title: "Função em desenvolvimento",
-      description: "A criação de equipes será implementada em breve.",
-    });
+    setIsCreateModalOpen(true);
   };
 
   const handleEditTeam = (team: Team) => {
@@ -60,8 +61,8 @@ export default function Teams() {
     });
   };
 
-  const activeTeamsCount = mockTeams.filter(t => t.status === 'active').length;
-  const archivedTeamsCount = mockTeams.filter(t => t.status === 'archived').length;
+  const activeTeamsCount = teams.filter(t => t.status === 'active').length;
+  const archivedTeamsCount = teams.filter(t => t.status === 'archived').length;
 
   return (
     <Layout>
@@ -170,6 +171,12 @@ export default function Teams() {
           )}
         </div>
       </div>
+
+      {/* Create Team Modal */}
+      <CreateTeamModal 
+        open={isCreateModalOpen} 
+        onOpenChange={setIsCreateModalOpen}
+      />
     </Layout>
   );
 }
