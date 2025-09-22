@@ -7,9 +7,7 @@ import {
   BarChart3, 
   Users, 
   Calendar,
-  User,
   Settings,
-  LogOut,
   Menu,
   X
 } from "lucide-react";
@@ -28,7 +26,6 @@ const menuItems = [
   { id: "reports", label: "Relatórios", icon: BarChart3, path: "/reports" },
   { id: "teams", label: "Equipes", icon: Users, path: "/teams" },
   { id: "calendar", label: "Calendário", icon: Calendar, path: "/calendar" },
-  { id: "profile", label: "Meu Perfil", icon: User, path: "/profile" },
   { id: "settings", label: "Configurações", icon: Settings, path: "/settings" },
 ];
 
