@@ -11,11 +11,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
-import { User, Palette, Bell, Shield, Settings as SettingsIcon, Save, Upload, Undo2 } from "lucide-react";
+import { User, Palette, Bell, Shield, Settings as SettingsIcon, Save, Upload, Undo2, LogOut } from "lucide-react";
 
 export default function Settings() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   
   // Profile settings initialized from auth user
@@ -167,7 +167,7 @@ export default function Settings() {
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Perfil</span>
+            <span className="hidden sm:inline">Conta</span>
           </TabsTrigger>
           <TabsTrigger value="preferences" className="flex items-center gap-2">
             <SettingsIcon className="h-4 w-4" />
@@ -190,7 +190,7 @@ export default function Settings() {
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informações do Perfil</CardTitle>
+              <CardTitle>Informações da Conta</CardTitle>
               <CardDescription>
                 Gerencie suas informações pessoais e foto de perfil
               </CardDescription>
@@ -609,6 +609,30 @@ export default function Settings() {
                     </div>
                     <Button variant="outline" size="sm">
                       Encerrar todas as outras sessões
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-t pt-6">
+                  <h4 className="font-medium text-sm text-foreground mb-4">Conta</h4>
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Sair da conta</p>
+                      <p className="text-xs text-muted-foreground">Encerre sua sessão atual no sistema</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        logout();
+                        toast({
+                          title: "Sessão encerrada",
+                          description: "Você foi desconectado com sucesso.",
+                        });
+                      }}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sair
                     </Button>
                   </div>
                 </div>

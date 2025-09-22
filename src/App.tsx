@@ -18,6 +18,7 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import Profile from "./pages/Profile";
 import VerifyEmailFallback from "./pages/VerifyEmailFallback";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => (
             <Route path="/teams/:id" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             
             {/* Public Routes - no authentication required */}
