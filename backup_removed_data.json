@@ -1,0 +1,66 @@
+{
+  "backup_metadata": {
+    "timestamp": "2025-09-22T12:00:00Z",
+    "reason": "User requested removal of fake/generated accounts and reviews",
+    "performed_by": "Lovable AI Assistant",
+    "total_entries_removed": {
+      "mock_users": 4,
+      "mock_projects": 3,
+      "mock_tasks": 5,
+      "mock_teams": 3,
+      "test_users": 10
+    }
+  },
+  "removed_data": {
+    "mock_users": [
+      {
+        "id": "1",
+        "name": "Marina Santos",
+        "email": "marina@example.com",
+        "avatar": "MS",
+        "role": "Product Manager"
+      },
+      {
+        "id": "2",
+        "name": "Carlos Silva",
+        "email": "carlos@example.com",
+        "avatar": "CS",
+        "role": "Developer"
+      },
+      {
+        "id": "3",
+        "name": "Ana Costa",
+        "email": "ana@example.com",
+        "avatar": "AC",
+        "role": "Designer"
+      },
+      {
+        "id": "4",
+        "name": "Pedro Lima",
+        "email": "pedro@example.com",
+        "avatar": "PL",
+        "role": "QA Analyst"
+      }
+    ],
+    "mock_projects": [
+      {
+        "id": "1",
+        "name": "Sistema de Gestão",
+        "description": "Desenvolvimento de um sistema completo de gestão para pequenas empresas"
+      },
+      {
+        "id": "2",
+        "name": "App Mobile",
+        "description": "Aplicativo mobile para acompanhamento de tarefas e projetos"
+      },
+      {
+        "id": "3",
+        "name": "Website Institucional",
+        "description": "Novo website com identidade visual moderna e responsiva"
+      }
+    ],
+    "mock_tasks": 5,
+    "mock_teams": 3,
+    "test_users": 10
+  }
+}

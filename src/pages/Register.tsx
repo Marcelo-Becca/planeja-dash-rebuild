@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { validateEmailSecurity, validatePasswordSecurity, checkAccountSecurityFlags, generateSecurityReport } from '@/utils/security';
 import DevPanel from '@/components/DevPanel';
 
 interface FormData {
@@ -66,33 +67,33 @@ const Register = () => {
   };
 
   const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) return 'E-mail é obrigatório';
-    if (!emailRegex.test(email)) return 'Formato de e-mail inválido';
-    return '';
+    const validation = validateEmailSecurity(email);
+    return validation.isValid ? '' : validation.reason || 'Email inválido';
   };
 
   const validatePassword = (password: string) => {
-    if (!password) return 'Senha é obrigatória';
-    if (password.length < 8) return 'Senha deve ter pelo menos 8 caracteres';
-    if (!/[A-Z]/.test(password)) return 'Senha deve conter pelo menos uma letra maiúscula';
-    if (!/[a-z]/.test(password)) return 'Senha deve conter pelo menos uma letra minúscula';
-    if (!/[0-9]/.test(password)) return 'Senha deve conter pelo menos um número';
-    if (!/[^A-Za-z0-9]/.test(password)) return 'Senha deve conter pelo menos um símbolo';
+    const validation = validatePasswordSecurity(password);
+    if (!validation.isValid && validation.issues.length > 0) {
+      return validation.issues[0];
+    }
     return '';
   };
 
   const getPasswordStrength = (password: string) => {
-    let score = 0;
-    if (password.length >= 8) score += 20;
-    if (/[A-Z]/.test(password)) score += 20;
-    if (/[a-z]/.test(password)) score += 20;
-    if (/[0-9]/.test(password)) score += 20;
-    if (/[^A-Za-z0-9]/.test(password)) score += 20;
+    const validation = validatePasswordSecurity(password);
     
-    if (score < 60) return { strength: 'fraca', color: 'bg-destructive', score };
-    if (score < 80) return { strength: 'média', color: 'bg-amber-500', score };
-    return { strength: 'forte', color: 'bg-green-500', score };
+    let color = 'bg-destructive';
+    if (validation.strength === 'medium') color = 'bg-amber-500';
+    else if (validation.strength === 'strong') color = 'bg-green-500';
+    else if (validation.strength === 'very_strong') color = 'bg-emerald-600';
+    
+    return { 
+      strength: validation.strength === 'weak' ? 'fraca' : 
+                validation.strength === 'medium' ? 'média' : 
+                validation.strength === 'strong' ? 'forte' : 'muito forte',
+      color, 
+      score: validation.score 
+    };
   };
 
   const validateConfirmPassword = (confirmPassword: string) => {
@@ -184,8 +185,8 @@ const Register = () => {
         preferences: formData.preferences,
       });
       
-      // Redirect to dashboard instead of email verification
-      navigate('/');
+      // Redirect to dashboard after successful registration
+      navigate('/dashboard');
     } catch (error) {
       // Erros já tratados no contexto
     } finally {
