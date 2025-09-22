@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UserProfile from "./UserProfile";
+import logoImage from "@/assets/planeja-logo.jpg";
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -62,11 +63,21 @@ export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-brand rounded-lg flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-bold text-sm">P+</span>
-              </div>
-              <span className="text-sidebar-primary font-semibold text-lg">Planeja+</span>
+            <div className="flex items-center space-x-3 px-1">
+              <img 
+                src={logoImage} 
+                alt="Planeja+"
+                className="h-8 w-auto object-contain"
+              />
+            </div>
+          )}
+          {isCollapsed && (
+            <div className="flex items-center justify-center">
+              <img 
+                src={logoImage} 
+                alt="Planeja+"
+                className="h-6 w-auto object-contain"
+              />
             </div>
           )}
           <button
