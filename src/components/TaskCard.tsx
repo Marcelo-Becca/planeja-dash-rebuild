@@ -22,6 +22,13 @@ const statusConfig = {
     borderColor: "border-blue-500/20",
     icon: Clock
   },
+  "under-review": {
+    label: "Em Revisão",
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/20",
+    icon: AlertTriangle
+  },
   completed: {
     label: "Concluída",
     color: "text-green-400",
