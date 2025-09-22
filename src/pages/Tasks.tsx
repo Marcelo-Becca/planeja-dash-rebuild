@@ -1,8 +1,9 @@
 import Layout from "@/components/Layout";
 import TaskCard from "@/components/TaskCard";
 import CreateTaskModal from "@/components/CreateTaskModal";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Search } from "lucide-react";
+import { Plus, Filter, Search, CheckSquare } from "lucide-react";
 import { useLocalData } from "@/hooks/useLocalData";
 import { useState } from "react";
 
@@ -88,30 +89,27 @@ export default function Tasks() {
             </div>
           </div>
 
-          {/* Tasks Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {filteredTasks.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                Nenhuma tarefa encontrada
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Tente ajustar os filtros ou criar uma nova tarefa
-              </p>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Primeira Tarefa
-              </Button>
+          {/* Tasks Grid or Empty State */}
+          {filteredTasks.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredTasks.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))}
             </div>
+          ) : tasks.length === 0 ? (
+            <EmptyState
+              icon={<CheckSquare className="w-8 h-8" />}
+              title="Nenhuma tarefa criada ainda"
+              description="Comece criando sua primeira tarefa para organizar e acompanhar seu trabalho."
+              actionLabel="Criar primeira tarefa"
+              onAction={() => setIsCreateModalOpen(true)}
+            />
+          ) : (
+            <EmptyState
+              icon={<Search className="w-8 h-8" />}
+              title="Nenhuma tarefa encontrada"
+              description="Nenhuma tarefa corresponde aos filtros aplicados. Tente ajustar sua busca ou filtros."
+            />
           )}
         </div>
       </div>

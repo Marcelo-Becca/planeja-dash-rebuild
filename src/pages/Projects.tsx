@@ -1,8 +1,9 @@
 import Layout from "@/components/Layout";
 import ProjectCard from "@/components/ProjectCard";
 import CreateProjectModal from "@/components/CreateProjectModal";
+import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Plus, Filter, Search } from "lucide-react";
+import { Plus, Filter, Search, FolderPlus } from "lucide-react";
 import { useLocalData } from "@/hooks/useLocalData";
 import { useState } from "react";
 
@@ -74,30 +75,27 @@ export default function Projects() {
             </div>
           </div>
 
-          {/* Projects Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-
-          {/* Empty State */}
-          {filteredProjects.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                Nenhum projeto encontrado
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Tente ajustar os filtros ou criar um novo projeto
-              </p>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Primeiro Projeto
-              </Button>
+          {/* Projects Grid or Empty State */}
+          {filteredProjects.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
             </div>
+          ) : projects.length === 0 ? (
+            <EmptyState
+              icon={<FolderPlus className="w-8 h-8" />}
+              title="Nenhum projeto criado ainda"
+              description="Comece criando seu primeiro projeto para organizar suas tarefas e colaborar com sua equipe."
+              actionLabel="Criar primeiro projeto"
+              onAction={() => setIsCreateModalOpen(true)}
+            />
+          ) : (
+            <EmptyState
+              icon={<Search className="w-8 h-8" />}
+              title="Nenhum projeto encontrado"
+              description="Nenhum projeto corresponde aos filtros aplicados. Tente ajustar sua busca ou filtros."
+            />
           )}
         </div>
       </div>

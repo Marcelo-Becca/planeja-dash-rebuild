@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Project, Task, Team, User, mockProjects, mockTasks, mockTeams, mockUsers } from '@/data/mockData';
+import { Project, Task, Team, User } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Types for local storage
 interface LocalStorageData {
@@ -13,19 +14,19 @@ interface LocalStorageData {
 // Generate unique ID
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-// Initial data with mock data
+// Initial empty data for new users
 const getInitialData = (): LocalStorageData => ({
-  projects: [...mockProjects],
-  tasks: [...mockTasks],
-  teams: [...mockTeams],
-  users: [...mockUsers],
+  projects: [],
+  tasks: [],
+  teams: [],
+  users: [],
   lastUpdate: new Date().toISOString()
 });
 
-// Load data from localStorage or use initial data
-const loadData = (): LocalStorageData => {
+// Load data from localStorage or use initial data (user-specific)
+const loadData = (userId: string): LocalStorageData => {
   try {
-    const stored = localStorage.getItem('planeja-data');
+    const stored = localStorage.getItem(`planeja-data-${userId}`);
     if (stored) {
       const data = JSON.parse(stored);
       // Convert date strings back to Date objects
@@ -50,10 +51,10 @@ const loadData = (): LocalStorageData => {
   return getInitialData();
 };
 
-// Save data to localStorage
-const saveData = (data: LocalStorageData) => {
+// Save data to localStorage (user-specific)
+const saveData = (data: LocalStorageData, userId: string) => {
   try {
-    localStorage.setItem('planeja-data', JSON.stringify({
+    localStorage.setItem(`planeja-data-${userId}`, JSON.stringify({
       ...data,
       lastUpdate: new Date().toISOString()
     }));
@@ -63,12 +64,17 @@ const saveData = (data: LocalStorageData) => {
 };
 
 export function useLocalData() {
-  const [data, setData] = useState<LocalStorageData>(loadData);
+  const { user } = useAuth();
+  const [data, setData] = useState<LocalStorageData>(() => 
+    user ? loadData(user.id) : getInitialData()
+  );
 
-  // Save to localStorage whenever data changes
+  // Save to localStorage whenever data changes (only if user is logged in)
   useEffect(() => {
-    saveData(data);
-  }, [data]);
+    if (user) {
+      saveData(data, user.id);
+    }
+  }, [data, user]);
 
   // Projects
   const addProject = useCallback((projectData: Omit<Project, 'id'>) => {
@@ -254,8 +260,10 @@ export function useLocalData() {
   const clearAllData = useCallback(() => {
     const initialData = getInitialData();
     setData(initialData);
-    localStorage.removeItem('planeja-data');
-  }, []);
+    if (user) {
+      localStorage.removeItem(`planeja-data-${user.id}`);
+    }
+  }, [user]);
 
   const exportData = useCallback(() => {
     return JSON.stringify(data, null, 2);

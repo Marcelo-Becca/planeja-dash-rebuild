@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,19 +9,34 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import Layout from "@/components/Layout";
 import { User, Palette, Bell, Shield, Settings as SettingsIcon, Save, Upload, Undo2 } from "lucide-react";
 
 export default function Settings() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("profile");
   
-  // Profile settings
+  // Profile settings initialized from auth user
   const [profile, setProfile] = useState({
-    name: "Maria Silva",
-    email: "maria.silva@empresa.com",
-    position: "Gerente de Projetos",
-    avatar: "/placeholder.svg"
+    name: "",
+    email: "",
+    position: "",
+    avatar: ""
   });
+
+  // Initialize profile data from auth user
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        name: user.name || "",
+        email: user.email || "",
+        position: user.role || "",
+        avatar: user.avatar || ""
+      });
+    }
+  }, [user]);
 
   // Preferences settings
   const [preferences, setPreferences] = useState({
@@ -56,6 +71,8 @@ export default function Settings() {
   });
 
   const handleSaveProfile = () => {
+    // Here you would typically update the user in AuthContext
+    // For now, just show success message
     toast({
       title: "Perfil atualizado",
       description: "Suas informações foram salvas com sucesso.",
@@ -124,14 +141,27 @@ export default function Settings() {
     });
   };
 
+  // Generate avatar initials from name
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Configurações</h1>
-        <p className="text-muted-foreground">
-          Personalize sua experiência e gerencie suas preferências
-        </p>
-      </div>
+    <Layout>
+      <div className="flex-1 px-4 md:px-6 py-4 md:py-6 overflow-y-auto">
+        <div className="container mx-auto max-w-6xl">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-foreground mb-2">Configurações</h1>
+            <p className="text-muted-foreground">
+              Personalize sua experiência e gerencie suas preferências
+            </p>
+          </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
@@ -168,8 +198,10 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="flex items-center gap-6">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.avatar} />
-                  <AvatarFallback>{profile.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  <AvatarImage src={profile.avatar || undefined} />
+                  <AvatarFallback className="text-lg">
+                    {getInitials(profile.name)}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
                   <Button variant="outline" size="sm" className="mb-2">
@@ -589,7 +621,9 @@ export default function Settings() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
-    </div>
+        </Tabs>
+        </div>
+      </div>
+    </Layout>
   );
 }

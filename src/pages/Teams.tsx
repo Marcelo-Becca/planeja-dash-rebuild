@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
 import CreateTeamModal from '@/components/CreateTeamModal';
+import EmptyState from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -133,7 +134,7 @@ export default function Teams() {
             </div>
           </div>
 
-          {/* Teams Grid */}
+          {/* Teams Grid or Empty State */}
           {filteredTeams.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredTeams.map((team) => (
@@ -146,28 +147,20 @@ export default function Teams() {
                 />
               ))}
             </div>
+          ) : teams.length === 0 ? (
+            <EmptyState
+              icon={<Users className="w-8 h-8" />}
+              title="Nenhuma equipe criada ainda"
+              description="Comece criando sua primeira equipe para colaborar em projetos e organizar membros."
+              actionLabel="Criar primeira equipe"
+              onAction={handleCreateTeam}
+            />
           ) : (
-            /* Empty State */
-            <div className="text-center py-16">
-              <div className="bg-card/50 backdrop-blur-sm rounded-xl border p-12 max-w-md mx-auto">
-                <Users className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">
-                  {searchTerm || statusFilter !== 'all' ? 'Nenhuma equipe encontrada' : 'Nenhuma equipe cadastrada'}
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {searchTerm || statusFilter !== 'all' 
-                    ? 'Tente ajustar os filtros para encontrar as equipes desejadas.'
-                    : 'Crie sua primeira equipe para começar a organizar seus times de trabalho.'
-                  }
-                </p>
-                {!searchTerm && statusFilter === 'all' && (
-                  <Button onClick={handleCreateTeam} className="bg-primary hover:bg-primary/90">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Criar primeira equipe
-                  </Button>
-                )}
-              </div>
-            </div>
+            <EmptyState
+              icon={<Search className="w-8 h-8" />}
+              title="Nenhuma equipe encontrada"
+              description="Nenhuma equipe corresponde aos filtros aplicados. Tente ajustar sua busca ou filtros."
+            />
           )}
         </div>
       </div>
