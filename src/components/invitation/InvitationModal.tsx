@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Copy, Link, Mail, Users, X } from 'lucide-react';
+import { Calendar, Copy, Link, Mail, Users, X, Search, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,6 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -34,7 +47,7 @@ import {
   ROLE_DESCRIPTIONS,
   EXPIRATION_OPTIONS
 } from '@/types/invitation';
-import { User, Team } from '@/data/mockData';
+import { User, Team, mockProjects, mockTeams } from '@/data/mockData';
 
 interface InvitationModalProps {
   open: boolean;
@@ -69,6 +82,29 @@ export function InvitationModal({
 
   const [selectedContact, setSelectedContact] = useState<CircleContact | null>(null);
   const [emailError, setEmailError] = useState<string>('');
+  const [projectSearchOpen, setProjectSearchOpen] = useState(false);
+  const [projectSearchValue, setProjectSearchValue] = useState('');
+
+  // Get all projects and teams for the dropdown
+  const allProjectsAndTeams = [
+    ...mockProjects.map(project => ({
+      id: project.id,
+      name: project.name,
+      type: 'project' as const,
+      description: project.description
+    })),
+    ...mockTeams.map(team => ({
+      id: team.id,
+      name: team.name,
+      type: 'team' as const,
+      description: team.description
+    }))
+  ];
+
+  // Filter projects and teams based on search
+  const filteredProjectsAndTeams = allProjectsAndTeams.filter(item =>
+    item.name.toLowerCase().includes(projectSearchValue.toLowerCase())
+  );
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -85,6 +121,8 @@ export function InvitationModal({
       });
       setSelectedContact(null);
       setEmailError('');
+      setProjectSearchOpen(false);
+      setProjectSearchValue('');
     }
   }, [open]);
 
@@ -280,22 +318,104 @@ export function InvitationModal({
           {/* Project/Team Selection */}
           <div className="space-y-2">
             <Label htmlFor="project">Projeto/Equipe associada</Label>
-            <Select
-              value={formData.projectId || ''}
-              onValueChange={(value) => 
-                setFormData(prev => ({ ...prev, projectId: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um projeto ou equipe" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="project-1">Projeto X</SelectItem>
-                <SelectItem value="project-2">Projeto Y</SelectItem>
-                <SelectItem value="team-1">Equipe Alpha</SelectItem>
-                <SelectItem value="team-2">Equipe Beta</SelectItem>
-              </SelectContent>
-            </Select>
+            {allProjectsAndTeams.length === 0 ? (
+              <div className="border border-input rounded-md p-4 text-center space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum projeto ou equipe encontrado
+                </p>
+                <div className="flex gap-2 justify-center">
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Projeto
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Criar Equipe
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Popover open={projectSearchOpen} onOpenChange={setProjectSearchOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={projectSearchOpen}
+                    className="w-full justify-between"
+                  >
+                    {formData.projectId
+                      ? allProjectsAndTeams.find(item => item.id === formData.projectId)?.name
+                      : "Selecione um projeto ou equipe"
+                    }
+                    <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover border border-border shadow-md z-50">
+                  <Command>
+                    <CommandInput 
+                      placeholder="Buscar projeto ou equipe..." 
+                      value={projectSearchValue}
+                      onValueChange={setProjectSearchValue}
+                    />
+                    <CommandList>
+                      <CommandEmpty>Nenhum projeto ou equipe encontrado.</CommandEmpty>
+                      <CommandGroup heading="Projetos">
+                        {filteredProjectsAndTeams
+                          .filter(item => item.type === 'project')
+                          .map((project) => (
+                            <CommandItem
+                              key={project.id}
+                              value={project.id}
+                              onSelect={() => {
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  projectId: project.id === formData.projectId ? '' : project.id 
+                                }));
+                                setProjectSearchOpen(false);
+                              }}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{project.name}</span>
+                                {project.description && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {project.description}
+                                  </span>
+                                )}
+                              </div>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                      <CommandGroup heading="Equipes">
+                        {filteredProjectsAndTeams
+                          .filter(item => item.type === 'team')
+                          .map((team) => (
+                            <CommandItem
+                              key={team.id}
+                              value={team.id}
+                              onSelect={() => {
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  projectId: team.id === formData.projectId ? '' : team.id 
+                                }));
+                                setProjectSearchOpen(false);
+                              }}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{team.name}</span>
+                                {team.description && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {team.description}
+                                  </span>
+                                )}
+                              </div>
+                            </CommandItem>
+                          ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
 
           {/* Message */}
