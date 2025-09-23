@@ -58,6 +58,7 @@ export function InvitationModal({
 
   const [formData, setFormData] = useState<InvitationFormData>({
     recipientEmail: '',
+    recipientName: '',
     role: 'member',
     teams: [],
     message: '',
@@ -74,6 +75,7 @@ export function InvitationModal({
     if (open) {
       setFormData({
         recipientEmail: '',
+        recipientName: '',
         role: 'member',
         teams: [],
         message: '',
@@ -86,12 +88,13 @@ export function InvitationModal({
     }
   }, [open]);
 
-  // Update email when contact is selected
+  // Update email and name when contact is selected
   useEffect(() => {
     if (selectedContact) {
       setFormData(prev => ({
         ...prev,
         recipientEmail: selectedContact.email,
+        recipientName: selectedContact.name,
         recipientId: selectedContact.id
       }));
       setEmailError('');
@@ -193,29 +196,25 @@ export function InvitationModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Contact Selection */}
+          {/* Full Name Input */}
           <div className="space-y-2">
-            <Label htmlFor="contact-select">Escolher do círculo</Label>
-            <ContactSelector
-              onSelect={setSelectedContact}
-              selectedContact={selectedContact}
-              placeholder="Buscar no círculo de contatos..."
+            <Label htmlFor="fullName">Nome completo *</Label>
+            <Input
+              id="fullName"
+              type="text"
+              placeholder="Ex.: João da Silva"
+              value={formData.recipientName || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, recipientName: e.target.value }))}
             />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Separator className="flex-1" />
-            <span className="text-sm text-muted-foreground">ou</span>
-            <Separator className="flex-1" />
           </div>
 
           {/* Email Input */}
           <div className="space-y-2">
-            <Label htmlFor="email">E-mail do convidado</Label>
+            <Label htmlFor="email">E-mail do convidado *</Label>
             <Input
               id="email"
               type="email"
-              placeholder="email@exemplo.com"
+              placeholder="seuemail@exemplo.com"
               value={formData.recipientEmail}
               onChange={(e) => handleEmailChange(e.target.value)}
               className={emailError ? 'border-destructive' : ''}
@@ -225,9 +224,19 @@ export function InvitationModal({
             )}
           </div>
 
+          {/* Contact Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="contact-select">Ou escolher do círculo</Label>
+            <ContactSelector
+              onSelect={setSelectedContact}
+              selectedContact={selectedContact}
+              placeholder="Buscar no círculo de contatos..."
+            />
+          </div>
+
           {/* Role Selection */}
           <div className="space-y-2">
-            <Label htmlFor="role">Papel</Label>
+            <Label htmlFor="role">Função ou cargo</Label>
             <Select
               value={formData.role}
               onValueChange={(value: InvitationRole) => 
@@ -235,74 +244,75 @@ export function InvitationModal({
               }
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Selecione uma função" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ROLE_DESCRIPTIONS).map(([role, description]) => (
-                  <SelectItem 
-                    key={role} 
-                    value={role}
-                    disabled={!canAssignRole(role as InvitationRole)}
-                  >
+                <SelectItem value="member">
+                  <div className="flex flex-col">
+                    <span className="font-medium">Membro</span>
+                    <span className="text-xs text-muted-foreground">Pode participar e colaborar</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="admin">
+                  <div className="flex flex-col">
+                    <span className="font-medium">Gerente</span>
+                    <span className="text-xs text-muted-foreground">Pode gerenciar membros e projetos</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="observer">
+                  <div className="flex flex-col">
+                    <span className="font-medium">Colaborador</span>
+                    <span className="text-xs text-muted-foreground">Apenas visualização</span>
+                  </div>
+                </SelectItem>
+                {canAssignRole('owner') && (
+                  <SelectItem value="owner">
                     <div className="flex flex-col">
-                      <span className="capitalize font-medium">{role}</span>
-                      <span className="text-xs text-muted-foreground">{description}</span>
+                      <span className="font-medium">Proprietário</span>
+                      <span className="text-xs text-muted-foreground">Controle total</span>
                     </div>
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
-            {!canAssignRole(formData.role) && (
-              <p className="text-sm text-muted-foreground">
-                ⚠️ Você não pode atribuir um papel superior ao seu.
-              </p>
-            )}
           </div>
 
-          {/* Team Selection */}
-          {availableTeams.length > 0 && (
-            <div className="space-y-2">
-              <Label>Equipes (opcional)</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableTeams.map((team) => {
-                  const isSelected = formData.teams.includes(team.id);
-                  return (
-                    <Badge
-                      key={team.id}
-                      variant={isSelected ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          teams: isSelected
-                            ? prev.teams.filter(id => id !== team.id)
-                            : [...prev.teams, team.id]
-                        }));
-                      }}
-                    >
-                      {team.name}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {/* Project/Team Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="project">Projeto/Equipe associada</Label>
+            <Select
+              value={formData.projectId || ''}
+              onValueChange={(value) => 
+                setFormData(prev => ({ ...prev, projectId: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um projeto ou equipe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="project-1">Projeto X</SelectItem>
+                <SelectItem value="project-2">Projeto Y</SelectItem>
+                <SelectItem value="team-1">Equipe Alpha</SelectItem>
+                <SelectItem value="team-2">Equipe Beta</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Message */}
           <div className="space-y-2">
             <Label htmlFor="message">Mensagem personalizada (opcional)</Label>
             <Textarea
               id="message"
-              placeholder="Adicione uma mensagem pessoal ao convite..."
+              placeholder="Gostaria que você se junte à nossa equipe"
               value={formData.message}
               onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
               rows={3}
             />
           </div>
 
-          {/* Expiration */}
+          {/* Expiration Date */}
           <div className="space-y-2">
-            <Label htmlFor="expiration">Expiração do convite</Label>
+            <Label htmlFor="expiration">Data de expiração do convite</Label>
             <Select
               value={formData.expirationDays.toString()}
               onValueChange={(value) => 
@@ -378,7 +388,8 @@ export function InvitationModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || !!emailError || !formData.recipientEmail}
+            disabled={isLoading || !!emailError || !formData.recipientEmail || !formData.recipientName}
+            className="w-full"
           >
             {isLoading ? (
               <>

@@ -32,9 +32,11 @@ export interface Invitation {
 
 export interface InvitationFormData {
   recipientEmail: string;
+  recipientName?: string;
   recipientId?: string; // From circle selection
   role: InvitationRole;
   teams: string[];
+  projectId?: string;
   message?: string;
   expirationDays: number;
   generateLink: boolean;

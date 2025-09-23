@@ -14,6 +14,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { InvitationCard } from './InvitationCard';
+import { SentInvitationCard } from './SentInvitationCard';
 import { useInvitations } from '@/hooks/useInvitations';
 import { InvitationStatus } from '@/types/invitation';
 import { User } from '@/data/mockData';
@@ -144,15 +145,53 @@ export function InvitationInbox({ currentUser }: InvitationInboxProps) {
         </TabsContent>
 
         <TabsContent value="sent" className="space-y-4">
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CheckSquare className="h-12 w-12 text-muted-foreground mb-4" />
-              <CardTitle className="text-lg mb-2">Convites enviados</CardTitle>
-              <CardDescription>
-                Esta funcionalidade estará disponível em breve.
-              </CardDescription>
-            </CardContent>
-          </Card>
+          {(() => {
+            const sentInvitations = invitations.filter(inv => inv.senderId === currentUser.id);
+            const filteredSentInvitations = sentInvitations.filter(invitation => {
+              const matchesSearch = invitation.recipientEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                   invitation.target.name.toLowerCase().includes(searchTerm.toLowerCase());
+              
+              const matchesStatus = statusFilter === 'all' || invitation.status === statusFilter;
+              
+              // Check if expired
+              const isExpired = new Date() > invitation.expiresAt;
+              const actualStatus = (invitation.status === 'pending' && isExpired) ? 'expired' : invitation.status;
+              const matchesActualStatus = statusFilter === 'all' || actualStatus === statusFilter;
+              
+              return matchesSearch && matchesActualStatus;
+            });
+
+            if (filteredSentInvitations.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <CheckSquare className="h-12 w-12 text-muted-foreground mb-4" />
+                    <CardTitle className="text-lg mb-2">Nenhum convite enviado</CardTitle>
+                    <CardDescription>
+                      {searchTerm || statusFilter !== 'all' 
+                        ? 'Tente ajustar os filtros para ver mais resultados.'
+                        : 'Você ainda não enviou nenhum convite.'
+                      }
+                    </CardDescription>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            return (
+              <ScrollArea className="h-[600px]">
+                <div className="space-y-4 pr-4">
+                  {filteredSentInvitations.map((invitation) => (
+                    <SentInvitationCard
+                      key={invitation.id}
+                      invitation={invitation}
+                      currentUser={currentUser}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            );
+          })()}
         </TabsContent>
       </Tabs>
     </div>
