@@ -11,11 +11,26 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { CalendarEvent } from '@/types/calendar';
 import { CalendarIcon, Clock, MapPin, Users, Bell, Repeat, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useLocalData } from '@/hooks/useLocalData';
 import MultiUserSelector from '@/components/MultiUserSelector';
+
+// Helper functions for safe date handling
+const safeFormatDate = (date: Date | null | undefined, formatString: string = 'dd/MM/yyyy'): string => {
+  if (!date) return new Date().toISOString().split('T')[0];
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (!isValid(dateObj)) return new Date().toISOString().split('T')[0];
+  return format(dateObj, formatString);
+};
+
+const safeFormatTime = (date: Date | null | undefined): string => {
+  if (!date) return '00:00';
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (!isValid(dateObj)) return '00:00';
+  return format(dateObj, 'HH:mm');
+};
 
 interface CreateEventModalProps {
   isOpen: boolean;
@@ -204,7 +219,7 @@ export function CreateEventModal({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(formData.startDate, 'dd/MM/yyyy', { locale: ptBR })}
+                      {safeFormatDate(formData.startDate, 'dd/MM/yyyy')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -233,7 +248,7 @@ export function CreateEventModal({
                 {!formData.allDay && (
                   <Input
                     type="time"
-                    value={format(formData.startDate, 'HH:mm')}
+                    value={safeFormatTime(formData.startDate)}
                     onChange={(e) => {
                       const [hours, minutes] = e.target.value.split(':');
                       const newStart = new Date(formData.startDate);
@@ -258,7 +273,7 @@ export function CreateEventModal({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(formData.endDate, 'dd/MM/yyyy', { locale: ptBR })}
+                      {safeFormatDate(formData.endDate, 'dd/MM/yyyy')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -282,7 +297,7 @@ export function CreateEventModal({
                 {!formData.allDay && (
                   <Input
                     type="time"
-                    value={format(formData.endDate, 'HH:mm')}
+                    value={safeFormatTime(formData.endDate)}
                     onChange={(e) => {
                       const [hours, minutes] = e.target.value.split(':');
                       const newEnd = new Date(formData.endDate);
