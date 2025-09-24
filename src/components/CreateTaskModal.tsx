@@ -18,11 +18,9 @@ import {
   Calendar as CalendarIcon,
   Plus,
   X,
-  Upload,
   AlertCircle,
   Flag,
   User,
-  Paperclip,
   CheckSquare,
   Save,
   Undo2
@@ -51,7 +49,6 @@ interface TaskFormData {
   status: "pending" | "in-progress" | "under-review";
   dueDate: Date | undefined;
   subtasks: SubTask[];
-  attachments: File[];
 }
 
 const priorityOptions = [
@@ -80,8 +77,7 @@ export default function CreateTaskModal({ open, onOpenChange, preselectedProject
     priority: "medium",
     status: "pending",
     dueDate: undefined,
-    subtasks: [],
-    attachments: []
+    subtasks: []
   });
 
   const [newSubtask, setNewSubtask] = useState("");
@@ -165,8 +161,7 @@ export default function CreateTaskModal({ open, onOpenChange, preselectedProject
           priority: "medium",
           status: "pending",
           dueDate: undefined,
-          subtasks: [],
-          attachments: []
+          subtasks: []
         });
         setErrors({});
       } else {
@@ -225,22 +220,6 @@ export default function CreateTaskModal({ open, onOpenChange, preselectedProject
     }));
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setFormData(prev => ({
-        ...prev,
-        attachments: [...prev.attachments, ...Array.from(files)]
-      }));
-    }
-  };
-
-  const removeAttachment = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
-    }));
-  };
 
   const getSelectedProject = () => {
     return projects.find(p => p.id === formData.projectId);
@@ -537,52 +516,6 @@ export default function CreateTaskModal({ open, onOpenChange, preselectedProject
             )}
           </div>
 
-          {/* Anexos */}
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Paperclip className="h-4 w-4" />
-              Anexos (opcional)
-            </Label>
-            
-            <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-              <input
-                type="file"
-                id="file-upload"
-                className="hidden"
-                multiple
-                onChange={handleFileUpload}
-              />
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Clique aqui ou arraste arquivos para anexar
-                </p>
-              </label>
-            </div>
-
-            {/* Attachments list */}
-            {formData.attachments.length > 0 && (
-              <div className="space-y-2">
-                {formData.attachments.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded">
-                    <Paperclip className="h-4 w-4" />
-                    <span className="flex-1 text-sm">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {(file.size / 1024).toFixed(1)} KB
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeAttachment(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Actions */}
