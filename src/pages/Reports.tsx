@@ -1,29 +1,38 @@
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { FileDown, Calendar, AlertCircle } from "lucide-react";
 import Layout from "@/components/Layout";
-import ReportsFilters from "@/components/reports/ReportsFilters";
-import MetricsCards from "@/components/reports/MetricsCards";
-import ReportsCharts from "@/components/reports/ReportsCharts";
+import ComprehensiveReportsFilters from "@/components/reports/ComprehensiveReportsFilters";
+import KPIDashboard from "@/components/reports/KPIDashboard";
+import InteractiveCharts from "@/components/reports/InteractiveCharts";
+import DetailedTables from "@/components/reports/DetailedTables";
 import DetailsPanel from "@/components/reports/DetailsPanel";
-import { useReportsData } from "@/hooks/useReportsData";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useReportsAnalytics } from "@/hooks/useReportsAnalytics";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Reports() {
   const [detailsPanel, setDetailsPanel] = useState<{ type: string; data: any } | null>(null);
-  const { 
-    filters, 
-    loading, 
-    metricsData, 
-    chartData, 
-    updateFilters, 
-    resetFilters, 
-    getDetailedTasks,
-    hasData
-  } = useReportsData();
+  const {
+    filters,
+    loading,
+    hasRealData,
+    usingDemoData,
+    filteredTasks,
+    kpiMetrics,
+    timelineData,
+    projectPerformanceData,
+    taskDistributionData,
+    teamProductivityData,
+    filterOptions,
+    updateFilters,
+    resetFilters,
+    getTasksByCategory
+  } = useReportsAnalytics();
   const { toast } = useToast();
 
-  const handleMetricClick = (category: string) => {
-    const tasks = getDetailedTasks(category);
+  const handleKPIClick = (category: string) => {
+    const tasks = getTasksByCategory(category);
     if (tasks.length > 0) {
       setDetailsPanel({
         type: category,
@@ -33,44 +42,54 @@ export default function Reports() {
   };
 
   const handleChartClick = (type: string, data: any) => {
-    // Apply filter based on click
-    if (type === 'project') {
-      // Filter by project
-      toast({
-        title: "Filtro aplicado",
-        description: `Mostrando dados apenas do projeto: ${data}`,
-      });
-    } else if (type === 'member') {
-      // Filter by team member
-      toast({
-        title: "Filtro aplicado", 
-        description: `Mostrando dados apenas de: ${data}`,
+    toast({
+      title: "Filtro interativo",
+      description: `Filtrar por ${type}: ${data}`,
+    });
+  };
+
+  const handleDrillDown = (type: string, category: string) => {
+    const tasks = getTasksByCategory(category);
+    if (tasks.length > 0) {
+      setDetailsPanel({
+        type: category,
+        data: tasks
       });
     }
   };
 
-  const handleDetailsClick = (type: string, category: string) => {
-    let categoryKey = category;
+  const handleTaskClick = (taskId: string) => {
+    toast({
+      title: "Navegação para tarefa",
+      description: `Abrindo tarefa ${taskId}`,
+    });
+  };
+
+  const handleExportTasks = () => {
+    const csvContent = [
+      ['Título', 'Projeto', 'Responsável', 'Status', 'Prioridade', 'Criada em', 'Prazo'],
+      ...filteredTasks.map(task => [
+        task.title,
+        task.project,
+        task.assignee,
+        task.status,
+        task.priority,
+        task.createdAt,
+        task.deadline
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'relatorio-tarefas.csv';
+    a.click();
     
-    // Map display names to internal keys
-    const categoryMap: Record<string, string> = {
-      'concluídas': 'completed',
-      'em-andamento': 'in-progress', 
-      'pendentes': 'pending',
-      'atrasadas': 'overdue'
-    };
-    
-    if (categoryMap[category]) {
-      categoryKey = categoryMap[category];
-    }
-    
-    const tasks = getDetailedTasks(categoryKey);
-    if (tasks.length > 0) {
-      setDetailsPanel({
-        type: categoryKey,
-        data: tasks
-      });
-    }
+    toast({
+      title: "Relatório exportado",
+      description: "Download do arquivo CSV iniciado",
+    });
   };
 
   const getPeriodLabel = () => {
@@ -99,23 +118,55 @@ export default function Reports() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
-          <p className="text-muted-foreground">
-            Análise dinâmica de desempenho, produtividade e progresso
-          </p>
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
+            <p className="text-muted-foreground">
+              Visões e métricas sobre projetos, tarefas e equipes
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {usingDemoData && (
+              <Badge variant="outline" className="gap-2">
+                <AlertCircle className="w-3 h-3" />
+                Dados demonstrativos
+              </Badge>
+            )}
+            <Button variant="outline" onClick={handleExportTasks} className="gap-2">
+              <FileDown className="w-4 h-4" />
+              Exportar
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
-        <ReportsFilters 
+        <ComprehensiveReportsFilters 
           filters={filters}
           onFiltersChange={updateFilters}
           onReset={resetFilters}
           loading={loading}
+          filterOptions={filterOptions}
         />
 
+        {/* Demo Data Banner */}
+        {usingDemoData && (
+          <div className="bg-muted/50 border border-border rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-card-foreground">
+                  Dados demonstrativos carregados
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Estes dados serão substituídos pelos seus dados reais assim que você criar projetos e tarefas no sistema.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* No Data State */}
-        {!loading && !hasData && (
+        {!loading && filteredTasks.length === 0 && !usingDemoData && (
           <div className="text-center py-12 bg-card rounded-lg border border-border">
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
@@ -126,47 +177,58 @@ export default function Reports() {
                   Sem dados no período selecionado
                 </h3>
                 <p className="text-muted-foreground mt-1">
-                  Tente expandir o período ou verificar se há tarefas no sistema
+                  Tente expandir o período ou criar tarefas no sistema
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Content */}
-        {(hasData || loading) && (
-          <>
-            {/* Metrics Cards */}
-            <MetricsCards 
-              data={metricsData}
-              loading={loading}
-              onCardClick={handleMetricClick}
-              filterSummary={`${getPeriodLabel()} • ${filters.projects.length > 0 ? `${filters.projects.length} projeto(s)` : 'Todos os projetos'}`}
-            />
+        {/* Main Content */}
+        {(filteredTasks.length > 0 || loading) && (
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            {/* Left Column - Charts */}
+            <div className="xl:col-span-3 space-y-6">
+              <InteractiveCharts
+                timelineData={timelineData}
+                projectPerformanceData={projectPerformanceData}
+                taskDistributionData={taskDistributionData}
+                teamProductivityData={teamProductivityData}
+                loading={loading}
+                onChartClick={handleChartClick}
+                onDrillDown={handleDrillDown}
+              />
+            </div>
 
-            {/* Charts */}
-            <ReportsCharts 
-              data={chartData}
-              loading={loading}
-              onChartClick={handleChartClick}
-              onDetailsClick={handleDetailsClick}
-            />
-          </>
+            {/* Right Column - KPIs */}
+            <div className="xl:col-span-1">
+              <KPIDashboard
+                metrics={kpiMetrics}
+                loading={loading}
+                onCardClick={handleKPIClick}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Detailed Tables */}
+        {(filteredTasks.length > 0 || loading) && (
+          <DetailedTables
+            tasks={filteredTasks}
+            teamProductivityData={teamProductivityData}
+            loading={loading}
+            onTaskClick={handleTaskClick}
+            onExportTasks={handleExportTasks}
+          />
         )}
 
         {/* Details Panel */}
         <DetailsPanel 
           isOpen={!!detailsPanel}
-          title={getDetailsPanelTitle()}
+          title={detailsPanel?.type ? `Tarefas - ${detailsPanel.type}` : "Detalhes"}
           tasks={detailsPanel?.data || []}
           onClose={() => setDetailsPanel(null)}
-          onTaskClick={(taskId) => {
-            toast({
-              title: "Navegação para tarefa",
-              description: `Abrindo tarefa ${taskId}`,
-            });
-            // TODO: Navigate to task detail
-          }}
+          onTaskClick={handleTaskClick}
         />
       </div>
     </Layout>
