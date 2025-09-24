@@ -17,7 +17,6 @@ export default function Reports() {
     filters,
     loading,
     hasRealData,
-    usingDemoData,
     filteredTasks,
     kpiMetrics,
     timelineData,
@@ -126,13 +125,7 @@ export default function Reports() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {usingDemoData && (
-              <Badge variant="outline" className="gap-2">
-                <AlertCircle className="w-3 h-3" />
-                Dados demonstrativos
-              </Badge>
-            )}
-            <Button variant="outline" onClick={handleExportTasks} className="gap-2">
+            <Button variant="outline" onClick={handleExportTasks} className="gap-2" disabled={!hasRealData || filteredTasks.length === 0}>
               <FileDown className="w-4 h-4" />
               Exportar
             </Button>
@@ -148,25 +141,8 @@ export default function Reports() {
           filterOptions={filterOptions}
         />
 
-        {/* Demo Data Banner */}
-        {usingDemoData && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-muted-foreground mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-card-foreground">
-                  Dados demonstrativos carregados
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Estes dados serão substituídos pelos seus dados reais assim que você criar projetos e tarefas no sistema.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* No Data State */}
-        {!loading && filteredTasks.length === 0 && !usingDemoData && (
+        {!loading && !hasRealData && (
           <div className="text-center py-12 bg-card rounded-lg border border-border">
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
@@ -174,10 +150,29 @@ export default function Reports() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-card-foreground">
-                  Sem dados no período selecionado
+                  Sem dados disponíveis
                 </h3>
                 <p className="text-muted-foreground mt-1">
-                  Tente expandir o período ou criar tarefas no sistema
+                  Crie projetos, equipes e tarefas para visualizar métricas e relatórios
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No Data for Period */}
+        {!loading && hasRealData && filteredTasks.length === 0 && (
+          <div className="text-center py-12 bg-card rounded-lg border border-border">
+            <div className="space-y-4">
+              <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-card-foreground">
+                  Sem dados para este período
+                </h3>
+                <p className="text-muted-foreground mt-1">
+                  Tente expandir o período selecionado ou ajustar os filtros
                 </p>
               </div>
             </div>
@@ -185,10 +180,10 @@ export default function Reports() {
         )}
 
         {/* Main Content */}
-        {(filteredTasks.length > 0 || loading) && (
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        {hasRealData && (filteredTasks.length > 0 || loading) && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Column - Charts */}
-            <div className="xl:col-span-3 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
               <InteractiveCharts
                 timelineData={timelineData}
                 projectPerformanceData={projectPerformanceData}
@@ -201,7 +196,7 @@ export default function Reports() {
             </div>
 
             {/* Right Column - KPIs */}
-            <div className="xl:col-span-1">
+            <div className="lg:col-span-1">
               <KPIDashboard
                 metrics={kpiMetrics}
                 loading={loading}
@@ -212,7 +207,7 @@ export default function Reports() {
         )}
 
         {/* Detailed Tables */}
-        {(filteredTasks.length > 0 || loading) && (
+        {hasRealData && (filteredTasks.length > 0 || loading) && (
           <DetailedTables
             tasks={filteredTasks}
             teamProductivityData={teamProductivityData}

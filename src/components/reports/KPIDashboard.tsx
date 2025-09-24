@@ -33,12 +33,12 @@ export default function KPIDashboard({ metrics, loading = false, onCardClick }: 
     {
       id: "goalsAchieved",
       title: "Metas Batidas",
-      value: metrics.goalsAchieved === "not-defined" ? "Não definido" : `${metrics.goalsAchieved}%`,
+      value: metrics.goalsAchieved === "not-defined" ? "Sem dados disponíveis" : `${metrics.goalsAchieved}%`,
       icon: Target,
       variant: metrics.goalsAchieved === "not-defined" ? "muted" : "success" as const,
       trend: 0,
       clickable: metrics.goalsAchieved !== "not-defined",
-      description: metrics.goalsAchieved === "not-defined" ? "Configure metas para seus projetos" : undefined
+      description: metrics.goalsAchieved === "not-defined" ? "Configure metas nos seus projetos" : undefined
     },
     {
       id: "avgResolutionTime",
@@ -113,21 +113,19 @@ export default function KPIDashboard({ metrics, loading = false, onCardClick }: 
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <Card key={i} className="animate-pulse">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                <Skeleton className="h-4 w-24" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center justify-between">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-4 rounded" />
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Skeleton className="h-8 w-16" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-                <Skeleton className="h-8 w-8 rounded" />
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-3 w-24" />
               </div>
             </CardContent>
           </Card>
@@ -145,7 +143,7 @@ export default function KPIDashboard({ metrics, loading = false, onCardClick }: 
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {kpiCards.map((card) => {
           const Icon = card.icon;
           const isClickable = card.clickable && onCardClick;
@@ -160,42 +158,37 @@ export default function KPIDashboard({ metrics, loading = false, onCardClick }: 
               }`}
               onClick={isClickable ? () => onCardClick(card.id) : undefined}
             >
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {card.title}
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
+                  <span className="truncate">{card.title}</span>
+                  <Icon className={`w-4 h-4 ${getIconColor(card.variant)} flex-shrink-0`} />
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <div className="text-2xl font-bold text-card-foreground">
-                      {card.value}
+              <CardContent className="pt-0">
+                <div className="space-y-2">
+                  <div className="text-xl font-bold text-card-foreground">
+                    {card.value}
+                  </div>
+                  {card.trend !== 0 && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      {getTrendIcon(card.trend)}
+                      <span className="truncate">{getTrendText(card.trend)}</span>
                     </div>
-                    {card.trend !== 0 && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        {getTrendIcon(card.trend)}
-                        {getTrendText(card.trend)}
+                  )}
+                  {card.description && (
+                    <div className="text-xs text-muted-foreground leading-relaxed">
+                      {card.description}
+                    </div>
+                  )}
+                  {isClickable && (
+                    <div className="text-xs text-primary opacity-70 hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>Ver detalhes</span>
                       </div>
-                    )}
-                    {card.description && (
-                      <div className="text-xs text-muted-foreground">
-                        {card.description}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`p-2 rounded-lg bg-background/50`}>
-                    <Icon className={`w-6 h-6 ${getIconColor(card.variant)}`} />
-                  </div>
+                    </div>
+                  )}
                 </div>
-                
-                {isClickable && (
-                  <div className="mt-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      Ver detalhes
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           );
