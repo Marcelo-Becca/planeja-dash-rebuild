@@ -11,7 +11,7 @@ import {
   DetailedTaskForReports,
   DemoDataSeed
 } from '@/types/reports';
-import { subDays, subWeeks, subMonths, subQuarters, subYears, startOfDay, endOfDay, format, differenceInDays, isAfter, isBefore, isWithinInterval } from 'date-fns';
+import { subDays, subWeeks, subMonths, subQuarters, subYears, startOfDay, endOfDay, format, differenceInDays, isAfter, isBefore, isWithinInterval, isValid } from 'date-fns';
 
 // Demo data seeder
 const createDemoDataSeed = (): DemoDataSeed => {
@@ -134,6 +134,21 @@ const createDemoDataSeed = (): DemoDataSeed => {
   return { projects: demoProjects, tasks: demoTasks, users: demoUsers, teams: demoTeams };
 };
 
+// Helper function to safely format dates
+const safeFormatDate = (date: any, formatString: string = 'dd/MM/yyyy'): string => {
+  if (!date) return '—';
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (!isValid(dateObj)) return '—';
+  return format(dateObj, formatString);
+};
+
+// Helper function to safely create date objects
+const safeCreateDate = (date: any): Date | null => {
+  if (!date) return null;
+  const dateObj = date instanceof Date ? date : new Date(date);
+  return isValid(dateObj) ? dateObj : null;
+};
+
 // Default filters
 const defaultFilters: ReportFilters = {
   period: "month",
@@ -164,21 +179,23 @@ export function useReportsAnalytics() {
     if (savedDemoData) {
       try {
         const parsed = JSON.parse(savedDemoData);
-        // Convert date strings back to Date objects
+        // Convert date strings back to Date objects with validation
         parsed.projects = parsed.projects.map((p: any) => ({
           ...p,
-          startDate: new Date(p.startDate),
-          endDate: new Date(p.endDate)
+          startDate: safeCreateDate(p.startDate) || new Date(),
+          endDate: safeCreateDate(p.endDate) || new Date()
         }));
         parsed.tasks = parsed.tasks.map((t: any) => ({
           ...t,
-          createdAt: new Date(t.createdAt),
-          deadline: new Date(t.deadline),
-          completedAt: t.completedAt ? new Date(t.completedAt) : undefined
+          createdAt: safeCreateDate(t.createdAt) || new Date(),
+          deadline: safeCreateDate(t.deadline) || new Date(),
+          completedAt: t.completedAt ? safeCreateDate(t.completedAt) : undefined
         }));
         return parsed;
       } catch (error) {
         console.warn('Failed to parse demo data from localStorage:', error);
+        // Clear invalid data and create fresh demo data
+        localStorage.removeItem('planeja-demo-reports-data');
       }
     }
     
@@ -228,8 +245,8 @@ export function useReportsAnalytics() {
       // Use real data
       return localData.tasks.filter(task => {
         // Date filter
-        const taskDate = new Date(task.createdAt);
-        if (!isWithinInterval(taskDate, dateRange)) return false;
+        const taskDate = safeCreateDate(task.createdAt);
+        if (!taskDate || !isWithinInterval(taskDate, dateRange)) return false;
 
         // Project filter
         if (filters.projects.length > 0 && !filters.projects.includes(task.projectId)) return false;
@@ -244,27 +261,32 @@ export function useReportsAnalytics() {
         }
 
         return true;
-      }).map(task => ({
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        project: localData.projects.find(p => p.id === task.projectId)?.name || 'Projeto não encontrado',
-        projectId: task.projectId,
-        team: localData.teams.find(t => t.projects.some(p => p.id === task.projectId))?.name,
-        assignee: task.assignedTo?.[0]?.name || 'Não atribuído',
-        priority: task.priority,
-        status: task.status,
-        createdAt: format(new Date(task.createdAt), 'dd/MM/yyyy'),
-        deadline: format(new Date(task.deadline), 'dd/MM/yyyy'),
-        completedAt: task.status === 'completed' ? format(new Date(task.deadline), 'dd/MM/yyyy') : undefined,
-        timeSpent: task.status === 'completed' ? differenceInDays(new Date(task.deadline), new Date(task.createdAt)) : undefined
-      } as DetailedTaskForReports));
+      }).map(task => {
+        const createdDate = safeCreateDate(task.createdAt);
+        const deadlineDate = safeCreateDate(task.deadline);
+        
+        return {
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          project: localData.projects.find(p => p.id === task.projectId)?.name || 'Projeto não encontrado',
+          projectId: task.projectId,
+          team: localData.teams.find(t => t.projects.some(p => p.id === task.projectId))?.name,
+          assignee: task.assignedTo?.[0]?.name || 'Não atribuído',
+          priority: task.priority,
+          status: task.status,
+          createdAt: safeFormatDate(createdDate),
+          deadline: safeFormatDate(deadlineDate),
+          completedAt: task.status === 'completed' ? safeFormatDate(deadlineDate) : undefined,
+          timeSpent: task.status === 'completed' && createdDate && deadlineDate ? differenceInDays(deadlineDate, createdDate) : undefined
+        } as DetailedTaskForReports;
+      });
     } else if (demoData) {
       // Use demo data
       return demoData.tasks.filter(task => {
         // Date filter
-        const taskDate = new Date(task.createdAt);
-        if (!isWithinInterval(taskDate, dateRange)) return false;
+        const taskDate = safeCreateDate(task.createdAt);
+        if (!taskDate || !isWithinInterval(taskDate, dateRange)) return false;
 
         // Project filter
         if (filters.projects.length > 0 && !filters.projects.includes(task.projectId)) return false;
@@ -279,6 +301,9 @@ export function useReportsAnalytics() {
       }).map(task => {
         const project = demoData.projects.find(p => p.id === task.projectId);
         const assignee = demoData.users.find(u => u.id === task.assigneeId);
+        const createdDate = safeCreateDate(task.createdAt);
+        const deadlineDate = safeCreateDate(task.deadline);
+        const completedDate = safeCreateDate(task.completedAt);
         
         return {
           id: task.id,
@@ -290,10 +315,10 @@ export function useReportsAnalytics() {
           assignee: assignee?.name || 'Não atribuído',
           priority: task.priority,
           status: task.status,
-          createdAt: format(new Date(task.createdAt), 'dd/MM/yyyy'),
-          deadline: format(new Date(task.deadline), 'dd/MM/yyyy'),
-          completedAt: task.completedAt ? format(new Date(task.completedAt), 'dd/MM/yyyy') : undefined,
-          timeSpent: task.completedAt ? differenceInDays(new Date(task.completedAt), new Date(task.createdAt)) : undefined
+          createdAt: safeFormatDate(createdDate),
+          deadline: safeFormatDate(deadlineDate),
+          completedAt: completedDate ? safeFormatDate(completedDate) : undefined,
+          timeSpent: completedDate && createdDate ? differenceInDays(completedDate, createdDate) : undefined
         } as DetailedTaskForReports;
       });
     }
@@ -335,8 +360,11 @@ export function useReportsAnalytics() {
     filteredTasks.forEach(task => {
       if (task.status === 'completed') {
         const date = task.completedAt || task.createdAt;
-        const key = format(new Date(date), 'yyyy-MM-dd');
-        dataMap.set(key, (dataMap.get(key) || 0) + 1);
+        const dateObj = safeCreateDate(date);
+        if (dateObj) {
+          const key = format(dateObj, 'yyyy-MM-dd');
+          dataMap.set(key, (dataMap.get(key) || 0) + 1);
+        }
       }
     });
 
