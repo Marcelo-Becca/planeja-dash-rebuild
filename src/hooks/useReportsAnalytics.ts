@@ -3,7 +3,6 @@ import { useLocalData } from './useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   ReportFilters, 
-  KPIMetrics, 
   ChartDataPoint, 
   ProjectPerformanceData,
   TaskDistributionData,
@@ -135,47 +134,6 @@ export function useReportsAnalytics() {
     });
   }, [hasRealData, localData, dateRange, filters]);
 
-  // Calculate KPI metrics
-  const kpiMetrics = useMemo((): KPIMetrics => {
-    if (!hasRealData || filteredTasks.length === 0) {
-      return {
-        completedTasks: 0,
-        pendingTasks: 0,
-        goalsAchieved: "not-defined",
-        averageResolutionTime: 0,
-        weeklyBurndown: 0,
-        avgLoadPerMember: 0,
-        completedTasksTrend: 0,
-        pendingTasksTrend: 0,
-        resolutionTimeTrend: 0
-      };
-    }
-
-    const completed = filteredTasks.filter(t => t.status === 'completed').length;
-    const pending = filteredTasks.filter(t => t.status === 'pending').length;
-    
-    // Calculate average resolution time for completed tasks
-    const completedWithTime = filteredTasks.filter(t => t.status === 'completed' && t.timeSpent);
-    const avgResolution = completedWithTime.length > 0 
-      ? completedWithTime.reduce((sum, t) => sum + (t.timeSpent || 0), 0) / completedWithTime.length 
-      : 0;
-
-    // Calculate unique members working
-    const uniqueMembers = new Set(filteredTasks.map(t => t.assignee)).size;
-    const avgLoadPerMember = uniqueMembers > 0 ? filteredTasks.length / uniqueMembers : 0;
-
-    return {
-      completedTasks: completed,
-      pendingTasks: pending,
-      goalsAchieved: "not-defined",
-      averageResolutionTime: Math.round(avgResolution * 10) / 10,
-      weeklyBurndown: completed > 0 ? Math.round((completed / filteredTasks.length) * 100) : 0,
-      avgLoadPerMember: Math.round(avgLoadPerMember * 10) / 10,
-      completedTasksTrend: 0,
-      pendingTasksTrend: 0,
-      resolutionTimeTrend: 0
-    };
-  }, [filteredTasks, hasRealData]);
 
   // Generate timeline chart data
   const timelineData = useMemo((): ChartDataPoint[] => {
@@ -327,7 +285,6 @@ export function useReportsAnalytics() {
 
     // Data
     filteredTasks,
-    kpiMetrics,
     timelineData,
     projectPerformanceData,
     taskDistributionData,

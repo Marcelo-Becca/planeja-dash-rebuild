@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { FileDown, Calendar, AlertCircle } from "lucide-react";
+import { FileDown, Calendar } from "lucide-react";
 import Layout from "@/components/Layout";
 import ComprehensiveReportsFilters from "@/components/reports/ComprehensiveReportsFilters";
-import KPIDashboard from "@/components/reports/KPIDashboard";
 import InteractiveCharts from "@/components/reports/InteractiveCharts";
 import DetailedTables from "@/components/reports/DetailedTables";
 import DetailsPanel from "@/components/reports/DetailsPanel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useReportsAnalytics } from "@/hooks/useReportsAnalytics";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,7 +16,6 @@ export default function Reports() {
     loading,
     hasRealData,
     filteredTasks,
-    kpiMetrics,
     timelineData,
     projectPerformanceData,
     taskDistributionData,
@@ -29,16 +26,6 @@ export default function Reports() {
     getTasksByCategory
   } = useReportsAnalytics();
   const { toast } = useToast();
-
-  const handleKPIClick = (category: string) => {
-    const tasks = getTasksByCategory(category);
-    if (tasks.length > 0) {
-      setDetailsPanel({
-        type: category,
-        data: tasks
-      });
-    }
-  };
 
   const handleChartClick = (type: string, data: any) => {
     toast({
@@ -181,28 +168,16 @@ export default function Reports() {
 
         {/* Main Content */}
         {hasRealData && (filteredTasks.length > 0 || loading) && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Left Column - Charts */}
-            <div className="lg:col-span-3 space-y-6">
-              <InteractiveCharts
-                timelineData={timelineData}
-                projectPerformanceData={projectPerformanceData}
-                taskDistributionData={taskDistributionData}
-                teamProductivityData={teamProductivityData}
-                loading={loading}
-                onChartClick={handleChartClick}
-                onDrillDown={handleDrillDown}
-              />
-            </div>
-
-            {/* Right Column - KPIs */}
-            <div className="lg:col-span-1">
-              <KPIDashboard
-                metrics={kpiMetrics}
-                loading={loading}
-                onCardClick={handleKPIClick}
-              />
-            </div>
+          <div className="space-y-6">
+            <InteractiveCharts
+              timelineData={timelineData}
+              projectPerformanceData={projectPerformanceData}
+              taskDistributionData={taskDistributionData}
+              teamProductivityData={teamProductivityData}
+              loading={loading}
+              onChartClick={handleChartClick}
+              onDrillDown={handleDrillDown}
+            />
           </div>
         )}
 
