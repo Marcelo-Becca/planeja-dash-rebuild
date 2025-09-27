@@ -159,7 +159,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 1000);
   };
 
-  const simulateDelay = (ms: number = 1500) => new Promise(resolve => setTimeout(resolve, ms));
+  
 
   const login = async (email: string, password: string, rememberMe?: boolean) => {
     if (isBlocked) {
@@ -169,63 +169,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      await simulateDelay();
-      
-      // Simular validação de credenciais
-      const isValidCredential = (
-        (email === 'demo@planejaplus.com' || email === 'demo') && password === 'Demo123!' ||
-        testUsers.some(testUser => 
-          (testUser.email === email || testUser.name.toLowerCase() === email.toLowerCase()) && 
-          password === 'Test123!'
-        )
-      );
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password,
+      });
 
-      if (!isValidCredential) {
+      if (error) {
+        // Increment login attempts for authentication errors
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
         
-        localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify({
+        const attemptsData = {
           count: newAttempts,
           timestamp: Date.now()
-        }));
-
+        };
+        localStorage.setItem(LOGIN_ATTEMPTS_KEY, JSON.stringify(attemptsData));
+        
         if (newAttempts >= 5) {
           setIsBlocked(true);
-          startBlockTimer(120000); // 2 minutos
-          throw new Error('Muitas tentativas de login. Conta temporariamente bloqueada por 2 minutos.');
+          startBlockTimer(120000); // 2 minutes
+          throw new Error('Conta bloqueada temporariamente por segurança. Tente novamente em 2 minutos.');
         }
-        
-        throw new Error('E-mail ou senha incorretos');
-      }
 
-      // Login bem-sucedido
-      let loggedUser: User;
-      
-      // Check if it's a test user login
-      const testUser = testUsers.find(tu => 
-        tu.email === email || tu.name.toLowerCase() === email.toLowerCase()
-      );
-      
-      if (testUser) {
-        loggedUser = testUser;
-      } else {
-        loggedUser = { ...DEMO_USER };
+        // Handle specific Supabase auth errors
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('E-mail ou senha incorretos');
+        } else if (error.message.includes('Email not confirmed')) {
+          throw new Error('E-mail não verificado. Verifique sua caixa de entrada.');
+        } else {
+          throw new Error(error.message);
+        }
       }
       
-      // Email verification check removed - all users are auto-verified
-
-      setUser(loggedUser);
-      setIsEmailVerified(true);
+      // Reset login attempts on successful login
       setLoginAttempts(0);
       localStorage.removeItem(LOGIN_ATTEMPTS_KEY);
       
-      if (rememberMe) {
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(loggedUser));
-      }
-      
       toast({
         title: "Login realizado com sucesso!",
-        description: `Bem-vindo de volta, ${loggedUser.name}`,
+        description: `Bem-vindo de volta!`,
       });
 
     } catch (error) {
@@ -310,6 +292,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw new Error('Senha deve ter pelo menos 6 caracteres');
         } else if (error.message.includes('Unable to validate email')) {
           throw new Error('E-mail inválido ou temporário');
+        } else if (error.message.includes('For security purposes, you can only request this after')) {
+          // Rate limit error - provide helpful message without timer
+          throw new Error('Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.');
+        } else if (error.message.includes('over_email_send_rate_limit') || error.status === 429) {
+          // Rate limit error - provide helpful message without timer
+          throw new Error('Limite de tentativas atingido. Aguarde alguns minutos antes de tentar novamente.');
         } else {
           throw new Error(error.message);
         }
@@ -317,24 +305,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('Registration successful, user created:', data.user?.id);
 
-      // Log security information for audit
-      if (data.user) {
-        const securityFlags = checkAccountSecurityFlags(new Date(data.user.created_at));
-        const securityReport = generateSecurityReport({
-          id: data.user.id,
-          email: normalizedEmail,
-          created_at: data.user.created_at,
-          email_confirmed_at: data.user.email_confirmed_at,
-          ...securityFlags
-        });
-        console.log('User registration security report:', securityReport);
+      // Log security information for audit (with safe date handling)
+      if (data.user && data.user.created_at) {
+        try {
+          const createdDate = new Date(data.user.created_at);
+          // Validate date is not invalid
+          if (!isNaN(createdDate.getTime())) {
+            const securityFlags = checkAccountSecurityFlags(createdDate);
+            const securityReport = generateSecurityReport({
+              id: data.user.id,
+              email: normalizedEmail,
+              created_at: data.user.created_at,
+              email_confirmed_at: data.user.email_confirmed_at,
+              ...securityFlags
+            });
+            console.log('User registration security report:', securityReport);
+          }
+        } catch (securityError) {
+          console.warn('Error generating security report:', securityError);
+          // Don't fail registration if security report fails
+        }
       }
       
       toast({
         title: "Conta criada com sucesso!",
         description: data.user?.email_confirmed_at 
           ? "Você já está logado. Bem-vindo ao Planeja+!" 
-          : "Verifique seu e-mail para ativar a conta.",
+          : "Cadastro realizado! Você já pode fazer login.",
       });
 
     } catch (error) {
