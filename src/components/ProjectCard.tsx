@@ -29,7 +29,7 @@ const statusConfig = {
 };
 
 export default function ProjectCard({ project }: ProjectCardProps) {
-  const status = statusConfig[project.status];
+  const status = statusConfig[project.status] || statusConfig.active;
   const isOverdue = project.deadline < new Date() && project.status !== 'completed';
 
   return (
