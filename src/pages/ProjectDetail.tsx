@@ -43,7 +43,7 @@ const statusOptions = [
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { projects, tasks, updateProject, deleteProject, updateTask, users } = useLocalData();
+  const { projects, tasks, updateProject, deleteProject, updateTask, addTask, users } = useLocalData();
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
@@ -367,13 +367,10 @@ export default function ProjectDetail() {
                             priority: 'medium',
                             status: 'pending',
                             deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                            progress: 0,
                             createdAt: new Date(),
                             createdBy: users[0],
                             assignedTo: [],
-                            comments: [],
-                            assigneeIds: [],
-                            teamIds: []
+                            comments: []
                           });
                           setIsTaskModalOpen(true);
                         }}
@@ -484,6 +481,15 @@ export default function ProjectDetail() {
           </Tabs>
         </div>
       </div>
+
+      <CreateTaskModal
+        open={isTaskModalOpen}
+        onOpenChange={setIsTaskModalOpen}
+        preselectedProjectId={project.id}
+        onTaskCreated={() => {
+          // Tasks are already updated via useLocalData
+        }}
+      />
     </Layout>
   );
 }
