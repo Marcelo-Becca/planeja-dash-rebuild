@@ -9,8 +9,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalData } from "@/hooks/useLocalData";
@@ -32,6 +30,7 @@ import {
   Loader2,
   Undo2
 } from "lucide-react";
+import { MultiTeamSelector } from "./MultiTeamSelector";
 import { Project, Team, User } from "@/data/mockData";
 
 interface CreateProjectModalProps {
@@ -96,8 +95,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
   const [currentTab, setCurrentTab] = useState("project");
   const [showHelp, setShowHelp] = useState(false);
   const [createTeamMode, setCreateTeamMode] = useState<"existing">("existing");
-  const [existingTeamId, setExistingTeamId] = useState("");
-  const [autoLinkTeam, setAutoLinkTeam] = useState(true);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
   const [recentlyCreated, setRecentlyCreated] = useState<{project?: Project, team?: Team}>({});
 
   const [projectData, setProjectData] = useState<ProjectFormData>({
@@ -147,7 +145,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     });
     setNewTag("");
     setErrors({});
-    setExistingTeamId("");
+    setSelectedTeamIds([]);
     setCurrentTab("project");
   };
 
@@ -180,8 +178,8 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
   const validateTeam = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!existingTeamId) {
-      newErrors.existingTeam = "Selecione uma equipe existente";
+    if (selectedTeamIds.length === 0) {
+      newErrors.existingTeam = "Selecione pelo menos uma equipe";
     }
 
     return newErrors;
@@ -209,14 +207,20 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      let teamToUse: Team | undefined;
-
-      // Get existing team
-      teamToUse = teams.find(t => t.id === existingTeamId);
+      // Get selected teams
+      const selectedTeams = teams.filter(t => selectedTeamIds.includes(t.id));
 
       // Create project
       const projectLeader = users.find(u => u.id === projectData.leaderId)!;
-      const projectMembers = teamToUse ? teamToUse.members.map(m => m.user) : [];
+      
+      // Collect all unique members from all selected teams
+      const allMembersMap = new Map<string, User>();
+      selectedTeams.forEach(team => {
+        team.members.forEach(member => {
+          allMembersMap.set(member.user.id, member.user);
+        });
+      });
+      const projectMembers = Array.from(allMembersMap.values());
 
       const newProject = addProject({
         name: projectData.name,
@@ -225,6 +229,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         deadline: projectData.deadline!,
         createdBy: projectLeader,
         team: projectMembers,
+        teams: selectedTeams,
         progress: 0,
         tasksCount: 0,
         completedTasks: 0
@@ -655,73 +660,24 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
           <TabsContent value="team" className="space-y-6 mt-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Selecionar Equipes</h3>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={autoLinkTeam}
-                    onCheckedChange={setAutoLinkTeam}
-                  />
-                  <Label className="text-sm text-muted-foreground">
-                    Vincular automaticamente ao projeto
-                  </Label>
-                </div>
-              </div>
+              <h3 className="text-lg font-medium">Selecionar Equipes</h3>
 
-              {/* Existing Team Selection */}
+              {/* Multiple Team Selection */}
               <div className="space-y-2">
-                <Select
-                  value={existingTeamId}
-                  onValueChange={(value) => {
-                    setExistingTeamId(value);
+                <MultiTeamSelector
+                  teams={teams}
+                  selectedTeamIds={selectedTeamIds}
+                  onSelectionChange={(teamIds) => {
+                    setSelectedTeamIds(teamIds);
                     if (errors.existingTeam) setErrors(prev => ({ ...prev, existingTeam: "" }));
                   }}
-                >
-                  <SelectTrigger className={cn(errors.existingTeam && "border-red-500")}>
-                    <SelectValue placeholder="Selecione aqui suas equipes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: team.color }}
-                          />
-                          {team.name} ({team.members.length} membros)
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Selecione aqui suas equipes"
+                />
                 {errors.existingTeam && (
                   <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
                     {errors.existingTeam}
                   </p>
-                )}
-
-                {/* Show selected team info */}
-                {existingTeamId && (
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    {(() => {
-                      const selectedTeam = teams.find(t => t.id === existingTeamId);
-                      return selectedTeam ? (
-                        <div>
-                          <h4 className="font-medium">{selectedTeam.name}</h4>
-                          <p className="text-sm text-muted-foreground">{selectedTeam.description}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline">
-                              Líder: {selectedTeam.leader.name}
-                            </Badge>
-                            <Badge variant="outline">
-                              {selectedTeam.members.length} membros
-                            </Badge>
-                          </div>
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
                 )}
               </div>
             </div>
