@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Eye, BarChart3, PieChart, LineChart, TrendingUp } from "lucide-react";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart as RechartsBarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, Legend } from 'recharts';
 import { ChartDataPoint, ProjectPerformanceData, TaskDistributionData, TeamProductivityData } from "@/types/reports";
-
 interface InteractiveChartsProps {
   timelineData: ChartDataPoint[];
   projectPerformanceData: ProjectPerformanceData[];
@@ -17,7 +16,6 @@ interface InteractiveChartsProps {
   onChartClick?: (type: string, data: any) => void;
   onDrillDown?: (type: string, category: string) => void;
 }
-
 export default function InteractiveCharts({
   timelineData,
   projectPerformanceData,
@@ -28,11 +26,13 @@ export default function InteractiveCharts({
   onDrillDown
 }: InteractiveChartsProps) {
   const [selectedProject, setSelectedProject] = useState<string>("all");
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+    label
+  }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+      return <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
           <p className="font-medium text-popover-foreground">{`Data: ${label}`}</p>
           <p className="text-chart-1">
             {`Tarefas concluídas: ${payload[0].value}`}
@@ -40,17 +40,17 @@ export default function InteractiveCharts({
           <p className="text-xs text-muted-foreground mt-1">
             Clique para ver detalhes
           </p>
-        </div>
-      );
+        </div>;
     }
     return null;
   };
-
-  const PieTooltip = ({ active, payload }: any) => {
+  const PieTooltip = ({
+    active,
+    payload
+  }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
-      return (
-        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+      return <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
           <p className="font-medium text-popover-foreground">{data.status}</p>
           <p className="text-primary">
             {`${data.count} tarefas (${data.percentage}%)`}
@@ -58,64 +58,55 @@ export default function InteractiveCharts({
           <p className="text-xs text-muted-foreground mt-1">
             Clique para ver lista
           </p>
-        </div>
-      );
+        </div>;
     }
     return null;
   };
-
-  const BarTooltip = ({ active, payload, label }: any) => {
+  const BarTooltip = ({
+    active,
+    payload,
+    label
+  }: any) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
+      return <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
           <p className="font-medium text-popover-foreground">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }}>
-              {`${entry.dataKey === 'completionRate' ? 'Taxa de conclusão' : 
-                 entry.dataKey === 'totalTasks' ? 'Total de tarefas' : 
-                 entry.dataKey === 'completedTasks' ? 'Concluídas' : 
-                 entry.dataKey === 'inProgressTasks' ? 'Em andamento' :
-                 entry.dataKey === 'overdueTasks' ? 'Atrasadas' : entry.dataKey}: ${entry.value}${entry.dataKey === 'completionRate' ? '%' : ''}`}
-            </p>
-          ))}
+          {payload.map((entry: any, index: number) => <p key={index} style={{
+          color: entry.color
+        }}>
+              {`${entry.dataKey === 'completionRate' ? 'Taxa de conclusão' : entry.dataKey === 'totalTasks' ? 'Total de tarefas' : entry.dataKey === 'completedTasks' ? 'Concluídas' : entry.dataKey === 'inProgressTasks' ? 'Em andamento' : entry.dataKey === 'overdueTasks' ? 'Atrasadas' : entry.dataKey}: ${entry.value}${entry.dataKey === 'completionRate' ? '%' : ''}`}
+            </p>)}
           <p className="text-xs text-muted-foreground mt-1">
             Clique para mais detalhes
           </p>
-        </div>
-      );
+        </div>;
     }
     return null;
   };
-
   const handleTimelineClick = (data: any) => {
     if (onDrillDown) {
       onDrillDown('timeline', data.activeLabel);
     }
   };
-
   const handlePieClick = (data: any) => {
     if (onDrillDown) {
       onDrillDown('distribution', data.status);
     }
   };
-
   const handleProjectBarClick = (data: any) => {
     if (onChartClick) {
       onChartClick('project', data.name);
     }
   };
-
   const handleTeamBarClick = (data: any) => {
     if (onChartClick) {
       onChartClick('team', data.name);
     }
   };
-
   if (loading) {
-    return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="animate-pulse">
+    return <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {Array.from({
+        length: 4
+      }).map((_, i) => <Card key={i} className="animate-pulse">
             <CardHeader>
               <CardTitle>
                 <Skeleton className="h-5 w-48" />
@@ -124,16 +115,12 @@ export default function InteractiveCharts({
             <CardContent>
               <Skeleton className="h-64 w-full" />
             </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
+          </Card>)}
+      </div>;
   }
-
-  return (
-    <div className="space-y-6 animate-fade-in">
+  return <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-card-foreground">Gráficos Interativos</h2>
+        <h2 className="text-xl font-semibold text-card-foreground px-[11px]">Gráficos Interativos</h2>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">
             Clique nos gráficos para detalhar
@@ -167,21 +154,17 @@ export default function InteractiveCharts({
             <ResponsiveContainer width="100%" height={300}>
               <RechartsLineChart data={timelineData} onClick={handleTimelineClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="date" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
+                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <Tooltip content={<CustomTooltip />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="hsl(var(--chart-1))" 
-                  strokeWidth={3}
-                  dot={{ fill: "hsl(var(--chart-1))", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6, fill: "hsl(var(--chart-1))" }}
-                />
+                <Line type="monotone" dataKey="value" stroke="hsl(var(--chart-1))" strokeWidth={3} dot={{
+                fill: "hsl(var(--chart-1))",
+                strokeWidth: 2,
+                r: 4
+              }} activeDot={{
+                r: 6,
+                fill: "hsl(var(--chart-1))"
+              }} />
               </RechartsLineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -211,37 +194,24 @@ export default function InteractiveCharts({
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <RechartsPieChart>
-                <Pie
-                  data={taskDistributionData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="count"
-                  onClick={handlePieClick}
-                  label={({ status, percentage }) => `${percentage}%`}
-                >
-                  {taskDistributionData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.color}
-                      className="cursor-pointer hover:opacity-80"
-                    />
-                  ))}
+                <Pie data={taskDistributionData} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="count" onClick={handlePieClick} label={({
+                status,
+                percentage
+              }) => `${percentage}%`}>
+                  {taskDistributionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} className="cursor-pointer hover:opacity-80" />)}
                 </Pie>
                 <Tooltip content={<PieTooltip />} />
-                <Legend 
-                  wrapperStyle={{ fontSize: '12px' }}
-                  formatter={(value) => {
-                    const statusMap: Record<string, string> = {
-                      'pending': 'Pendentes',
-                      'in-progress': 'Em andamento',
-                      'completed': 'Concluídas',
-                      'overdue': 'Atrasadas'
-                    };
-                    return statusMap[value] || value;
-                  }}
-                />
+                <Legend wrapperStyle={{
+                fontSize: '12px'
+              }} formatter={value => {
+                const statusMap: Record<string, string> = {
+                  'pending': 'Pendentes',
+                  'in-progress': 'Em andamento',
+                  'completed': 'Concluídas',
+                  'overdue': 'Atrasadas'
+                };
+                return statusMap[value] || value;
+              }} />
               </RechartsPieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -272,22 +242,10 @@ export default function InteractiveCharts({
             <ResponsiveContainer width="100%" height={300}>
               <RechartsBarChart data={projectPerformanceData} onClick={handleProjectBarClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} angle={-45} textAnchor="end" height={80} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <Tooltip content={<BarTooltip />} />
-                <Bar 
-                  dataKey="completionRate" 
-                  fill="hsl(var(--chart-3))"
-                  className="cursor-pointer hover:opacity-80"
-                  radius={[4, 4, 0, 0]}
-                />
+                <Bar dataKey="completionRate" fill="hsl(var(--chart-3))" className="cursor-pointer hover:opacity-80" radius={[4, 4, 0, 0]} />
               </RechartsBarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -318,42 +276,19 @@ export default function InteractiveCharts({
             <ResponsiveContainer width="100%" height={300}>
               <RechartsBarChart data={teamProductivityData} onClick={handleTeamBarClick}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                 <Tooltip content={<BarTooltip />} />
-                <Bar 
-                  dataKey="completedTasks" 
-                  stackId="tasks"
-                  fill="hsl(var(--chart-1))"
-                  name="Concluídas"
-                  className="cursor-pointer hover:opacity-80"
-                />
-                <Bar 
-                  dataKey="inProgressTasks" 
-                  stackId="tasks"
-                  fill="hsl(var(--chart-2))"
-                  name="Em andamento"
-                  className="cursor-pointer hover:opacity-80"
-                />
-                <Bar 
-                  dataKey="overdueTasks" 
-                  stackId="tasks"
-                  fill="hsl(var(--chart-4))"
-                  name="Atrasadas"
-                  className="cursor-pointer hover:opacity-80"
-                />
-                <Legend 
-                  wrapperStyle={{ fontSize: '12px' }}
-                />
+                <Bar dataKey="completedTasks" stackId="tasks" fill="hsl(var(--chart-1))" name="Concluídas" className="cursor-pointer hover:opacity-80" />
+                <Bar dataKey="inProgressTasks" stackId="tasks" fill="hsl(var(--chart-2))" name="Em andamento" className="cursor-pointer hover:opacity-80" />
+                <Bar dataKey="overdueTasks" stackId="tasks" fill="hsl(var(--chart-4))" name="Atrasadas" className="cursor-pointer hover:opacity-80" />
+                <Legend wrapperStyle={{
+                fontSize: '12px'
+              }} />
               </RechartsBarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 }
