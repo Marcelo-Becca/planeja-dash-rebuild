@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Users, BarChart3, Clock, Zap, Shield, ArrowRight, User, Settings, Target, Star, Quote } from "lucide-react";
 import heroMockup from "@/assets/planeja-dashboard-mockup.jpg";
-import planejaLogo from "@/assets/planeja-logo.jpg";
+import planejaLogo from "@/assets/planeja-logo-new.png";
+
 export default function Home() {
-  return <div className="min-h-screen bg-background">
+  return (
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
@@ -58,7 +60,11 @@ export default function Home() {
 
             <div className="flex justify-center lg:justify-end">
               <div className="relative">
-                <img src={heroMockup} alt="Dashboard do Planeja+" className="rounded-xl shadow-2xl max-w-full h-auto" />
+                <img 
+                  src={heroMockup} 
+                  alt="Dashboard do Planeja+" 
+                  className="rounded-xl shadow-2xl max-w-full h-auto"
+                />
                 <div className="absolute inset-0 bg-gradient-brand opacity-5 rounded-xl"></div>
               </div>
             </div>
@@ -100,9 +106,7 @@ export default function Home() {
             </div>
 
             <div className="text-center space-y-6">
-              <div className="w-20 h-20 rounded-full text-white flex items-center justify-center mx-auto" style={{
-              backgroundColor: 'hsl(var(--chart-4))'
-            }}>
+              <div className="w-20 h-20 rounded-full text-white flex items-center justify-center mx-auto" style={{ backgroundColor: 'hsl(var(--chart-4))' }}>
                 <Target className="h-8 w-8" />
               </div>
               <h3 className="text-2xl font-semibold text-secondary">Gerencie</h3>
@@ -154,9 +158,7 @@ export default function Home() {
             <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-0 shadow-md">
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 rounded-xl bg-chart-4/10 flex items-center justify-center mb-6">
-                  <BarChart3 className="h-7 w-7" style={{
-                  color: 'hsl(var(--chart-4))'
-                }} />
+                  <BarChart3 className="h-7 w-7" style={{ color: 'hsl(var(--chart-4))' }} />
                 </div>
                 <CardTitle className="text-xl text-secondary">Relatórios Inteligentes</CardTitle>
                 <CardDescription className="text-base">
@@ -192,9 +194,7 @@ export default function Home() {
             <Card className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-0 shadow-md">
               <CardHeader className="pb-4">
                 <div className="w-14 h-14 rounded-xl bg-chart-4/10 flex items-center justify-center mb-6">
-                  <Shield className="h-7 w-7" style={{
-                  color: 'hsl(var(--chart-4))'
-                }} />
+                  <Shield className="h-7 w-7" style={{ color: 'hsl(var(--chart-4))' }} />
                 </div>
                 <CardTitle className="text-xl text-secondary">Segurança Total</CardTitle>
                 <CardDescription className="text-base">
@@ -232,7 +232,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-16 bg-[#7650cb]">
+      <footer className="py-16 bg-secondary">
         <div className="container">
           <div className="grid gap-8 md:grid-cols-4">
             <div className="space-y-4">
@@ -297,5 +297,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 }
