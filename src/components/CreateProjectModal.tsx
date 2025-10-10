@@ -95,7 +95,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentTab, setCurrentTab] = useState("project");
   const [showHelp, setShowHelp] = useState(false);
-  const [createTeamMode, setCreateTeamMode] = useState<"existing" | "new">("new");
+  const [createTeamMode, setCreateTeamMode] = useState<"existing">("existing");
   const [existingTeamId, setExistingTeamId] = useState("");
   const [autoLinkTeam, setAutoLinkTeam] = useState(true);
   const [recentlyCreated, setRecentlyCreated] = useState<{project?: Project, team?: Team}>({});
@@ -147,7 +147,6 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     });
     setNewTag("");
     setErrors({});
-    setCreateTeamMode("new");
     setExistingTeamId("");
     setCurrentTab("project");
   };
@@ -175,35 +174,13 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       newErrors.projectLeader = "Líder do projeto é obrigatório";
     }
 
-    // Check if leader is in team members
-    if (projectData.leaderId && !projectData.memberIds.includes(projectData.leaderId)) {
-      newErrors.projectLeader = "O líder deve estar incluído nos membros da equipe";
-    }
-
     return newErrors;
   };
 
   const validateTeam = () => {
     const newErrors: Record<string, string> = {};
     
-    if (createTeamMode === "new") {
-      if (!teamData.name.trim()) {
-        newErrors.teamName = "Nome da equipe é obrigatório";
-      }
-      
-      if (!teamData.leaderId) {
-        newErrors.teamLeader = "Líder da equipe é obrigatório";
-      }
-
-      if (teamData.memberIds.length === 0) {
-        newErrors.teamMembers = "Equipe deve ter pelo menos um membro";
-      }
-
-      // Check if leader is in team members
-      if (teamData.leaderId && !teamData.memberIds.includes(teamData.leaderId)) {
-        newErrors.teamLeader = "O líder deve estar incluído nos membros da equipe";
-      }
-    } else if (createTeamMode === "existing" && !existingTeamId) {
+    if (!existingTeamId) {
       newErrors.existingTeam = "Selecione uma equipe existente";
     }
 
@@ -232,47 +209,14 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      let newTeam: Team | undefined;
       let teamToUse: Team | undefined;
 
-      // Create or get team
-      if (createTeamMode === "new") {
-        const teamLeader = users.find(u => u.id === teamData.leaderId)!;
-        const teamMembers = users.filter(u => teamData.memberIds.includes(u.id));
-
-        newTeam = addTeam({
-          name: teamData.name,
-          description: teamData.description,
-          objective: teamData.objective,
-          status: "active",
-          color: teamData.color,
-          createdAt: new Date(),
-          createdBy: teamLeader,
-          leader: teamLeader,
-          members: teamMembers.map(member => ({
-            id: `member-${member.id}`,
-            user: member,
-            role: member.id === teamData.leaderId ? "leader" : "member",
-            joinedAt: new Date(),
-            tasksCount: 0
-          })),
-          projects: [],
-        recentActivity: [{
-          id: `activity-${Date.now()}`,
-          type: "member_added",
-          description: `Equipe ${teamData.name} foi criada`,
-          performedBy: teamLeader,
-          timestamp: new Date()
-        }]
-        });
-        teamToUse = newTeam;
-      } else {
-        teamToUse = teams.find(t => t.id === existingTeamId);
-      }
+      // Get existing team
+      teamToUse = teams.find(t => t.id === existingTeamId);
 
       // Create project
       const projectLeader = users.find(u => u.id === projectData.leaderId)!;
-      const projectMembers = teamToUse ? teamToUse.members.map(m => m.user) : users.filter(u => projectData.memberIds.includes(u.id));
+      const projectMembers = teamToUse ? teamToUse.members.map(m => m.user) : [];
 
       const newProject = addProject({
         name: projectData.name,
@@ -286,11 +230,11 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         completedTasks: 0
       });
 
-      setRecentlyCreated({ project: newProject, team: newTeam });
+      setRecentlyCreated({ project: newProject });
 
       toast({
         title: "Sucesso!",
-        description: `Projeto "${newProject.name}" ${newTeam ? 'e equipe criados' : 'criado'} com sucesso!`,
+        description: `Projeto "${newProject.name}" criado com sucesso!`,
         action: (
           <Button
             variant="outline"
@@ -329,9 +273,8 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
   const handleCancel = () => {
     const hasProjectData = projectData.name || projectData.description;
-    const hasTeamData = createTeamMode === "new" && (teamData.name || teamData.description);
     
-    if (hasProjectData || hasTeamData) {
+    if (hasProjectData) {
       if (confirm("Tem certeza que deseja cancelar? Todas as informações serão perdidas.")) {
         onOpenChange(false);
         resetForm();
@@ -371,21 +314,6 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     }));
   };
 
-  const handleTeamModeChange = (mode: "existing" | "new") => {
-    setCreateTeamMode(mode);
-    if (mode === "existing") {
-      // Clear team form data when switching to existing
-      setTeamData({
-        name: "",
-        description: "",
-        leaderId: "",
-        memberIds: [],
-        color: teamColors[0],
-        objective: ""
-      });
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -396,7 +324,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                 Criar Novo Projeto
               </DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Configure seu projeto e, opcionalmente, crie ou associe uma equipe
+                Configure seu projeto e associe uma equipe existente
               </p>
             </div>
             <Button
@@ -417,8 +345,8 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
             <h4 className="font-medium mb-2">Como criar um projeto:</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Preencha as informações básicas do projeto na primeira aba</li>
-              <li>• Opcionalmente, crie uma nova equipe ou associe uma existente</li>
-              <li>• O líder do projeto deve estar incluído na equipe</li>
+              <li>• Selecione o líder do projeto</li>
+              <li>• Associe uma equipe existente na segunda aba</li>
               <li>• Você pode adicionar tags para facilitar buscas e filtros</li>
               <li>• Após criar, você pode adicionar tarefas e acompanhar o progresso</li>
             </ul>
@@ -694,8 +622,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   onValueChange={(value) => {
                     setProjectData(prev => ({ 
                       ...prev, 
-                      leaderId: value,
-                      memberIds: prev.memberIds.includes(value) ? prev.memberIds : [...prev.memberIds, value]
+                      leaderId: value
                     }));
                     if (errors.projectLeader) setErrors(prev => ({ ...prev, projectLeader: "" }));
                   }}
@@ -723,39 +650,13 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   </p>
                 )}
               </div>
-
-              {/* Project Members */}
-              <div className="space-y-2">
-                <Label>Membros do Projeto</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-3">
-                  {users.map((user) => (
-                    <div key={user.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`project-${user.id}`}
-                        checked={projectData.memberIds.includes(user.id)}
-                        onCheckedChange={() => toggleProjectMember(user.id)}
-                        disabled={user.id === projectData.leaderId}
-                      />
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback>{user.avatar}</AvatarFallback>
-                      </Avatar>
-                      <label htmlFor={`project-${user.id}`} className="text-sm cursor-pointer flex-1">
-                        {user.name} - {user.role}
-                        {user.id === projectData.leaderId && (
-                          <Badge variant="outline" className="ml-2 text-xs">Líder</Badge>
-                        )}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="team" className="space-y-6 mt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Configuração da Equipe</h3>
+                <h3 className="text-lg font-medium">Selecionar Equipe Existente</h3>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={autoLinkTeam}
@@ -767,240 +668,66 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                 </div>
               </div>
 
-              {/* Team Mode Selection */}
-              <div className="flex gap-4 p-4 bg-muted/50 rounded-lg">
-                <Button
-                  type="button"
-                  variant={createTeamMode === "new" ? "default" : "outline"}
-                  onClick={() => handleTeamModeChange("new")}
-                  className="flex-1"
+              {/* Existing Team Selection */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  Selecionar Equipe
+                  <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={existingTeamId}
+                  onValueChange={(value) => {
+                    setExistingTeamId(value);
+                    if (errors.existingTeam) setErrors(prev => ({ ...prev, existingTeam: "" }));
+                  }}
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Criar Nova Equipe
-                </Button>
-                <Button
-                  type="button"
-                  variant={createTeamMode === "existing" ? "default" : "outline"}
-                  onClick={() => handleTeamModeChange("existing")}
-                  className="flex-1"
-                >
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Usar Equipe Existente
-                </Button>
-              </div>
-
-              {createTeamMode === "existing" ? (
-                /* Existing Team Selection */
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    Selecionar Equipe
-                    <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={existingTeamId}
-                    onValueChange={(value) => {
-                      setExistingTeamId(value);
-                      if (errors.existingTeam) setErrors(prev => ({ ...prev, existingTeam: "" }));
-                    }}
-                  >
-                    <SelectTrigger className={cn(errors.existingTeam && "border-red-500")}>
-                      <SelectValue placeholder="Selecione uma equipe" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: team.color }}
-                            />
-                            {team.name} ({team.members.length} membros)
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.existingTeam && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
-                      <AlertCircle className="h-4 w-4" />
-                      {errors.existingTeam}
-                    </p>
-                  )}
-
-                  {/* Show selected team info */}
-                  {existingTeamId && (
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      {(() => {
-                        const selectedTeam = teams.find(t => t.id === existingTeamId);
-                        return selectedTeam ? (
-                          <div>
-                            <h4 className="font-medium">{selectedTeam.name}</h4>
-                            <p className="text-sm text-muted-foreground">{selectedTeam.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <Badge variant="outline">
-                                Líder: {selectedTeam.leader.name}
-                              </Badge>
-                              <Badge variant="outline">
-                                {selectedTeam.members.length} membros
-                              </Badge>
-                            </div>
-                          </div>
-                        ) : null;
-                      })()}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                /* New Team Form */
-                <div className="space-y-4">
-                  {/* Team Name & Color */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor="teamName" className="flex items-center gap-2">
-                        Nome da Equipe
-                        <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="teamName"
-                        placeholder="Ex.: Time de Desenvolvimento"
-                        value={teamData.name}
-                        onChange={(e) => {
-                          setTeamData(prev => ({ ...prev, name: e.target.value }));
-                          if (errors.teamName) setErrors(prev => ({ ...prev, teamName: "" }));
-                        }}
-                        className={cn(errors.teamName && "border-red-500")}
-                      />
-                      {errors.teamName && (
-                        <p className="text-sm text-red-500 flex items-center gap-1">
-                          <AlertCircle className="h-4 w-4" />
-                          {errors.teamName}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Team Color */}
-                    <div className="space-y-2">
-                      <Label>Cor da Equipe</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {teamColors.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            onClick={() => setTeamData(prev => ({ ...prev, color }))}
-                            className={cn(
-                              "w-8 h-8 rounded-full border-2 transition-all",
-                              teamData.color === color ? "border-primary scale-110" : "border-border"
-                            )}
-                            style={{ backgroundColor: color }}
+                  <SelectTrigger className={cn(errors.existingTeam && "border-red-500")}>
+                    <SelectValue placeholder="Selecione uma equipe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: team.color }}
                           />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Team Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="teamDescription">Descrição</Label>
-                    <Textarea
-                      id="teamDescription"
-                      placeholder="Descreva o propósito desta equipe..."
-                      value={teamData.description}
-                      onChange={(e) => setTeamData(prev => ({ ...prev, description: e.target.value }))}
-                      className="min-h-16"
-                    />
-                  </div>
-
-                  {/* Team Objective */}
-                  <div className="space-y-2">
-                    <Label htmlFor="teamObjective" className="flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      Objetivo Principal
-                    </Label>
-                    <Input
-                      id="teamObjective"
-                      placeholder="Ex.: Desenvolver e manter produtos digitais"
-                      value={teamData.objective}
-                      onChange={(e) => setTeamData(prev => ({ ...prev, objective: e.target.value }))}
-                    />
-                  </div>
-
-                  {/* Team Leader */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      Líder da Equipe
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={teamData.leaderId}
-                      onValueChange={(value) => {
-                        setTeamData(prev => ({ 
-                          ...prev, 
-                          leaderId: value,
-                          memberIds: prev.memberIds.includes(value) ? prev.memberIds : [...prev.memberIds, value]
-                        }));
-                        if (errors.teamLeader) setErrors(prev => ({ ...prev, teamLeader: "" }));
-                      }}
-                    >
-                      <SelectTrigger className={cn(errors.teamLeader && "border-red-500")}>
-                        <SelectValue placeholder="Selecione o líder" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.map((user) => (
-                          <SelectItem key={user.id} value={user.id}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarFallback>{user.avatar}</AvatarFallback>
-                              </Avatar>
-                              {user.name} - {user.role}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {errors.teamLeader && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-4 w-4" />
-                        {errors.teamLeader}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Team Members */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      Membros da Equipe
-                      <span className="text-red-500">*</span>
-                    </Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-3">
-                      {users.map((user) => (
-                        <div key={user.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`team-${user.id}`}
-                            checked={teamData.memberIds.includes(user.id)}
-                            onCheckedChange={() => toggleTeamMember(user.id)}
-                            disabled={user.id === teamData.leaderId}
-                          />
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>{user.avatar}</AvatarFallback>
-                          </Avatar>
-                          <label htmlFor={`team-${user.id}`} className="text-sm cursor-pointer flex-1">
-                            {user.name} - {user.role}
-                            {user.id === teamData.leaderId && (
-                              <Badge variant="outline" className="ml-2 text-xs">Líder</Badge>
-                            )}
-                          </label>
+                          {team.name} ({team.members.length} membros)
                         </div>
-                      ))}
-                    </div>
-                    {errors.teamMembers && (
-                      <p className="text-sm text-red-500 flex items-center gap-1">
-                        <AlertCircle className="h-4 w-4" />
-                        {errors.teamMembers}
-                      </p>
-                    )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.existingTeam && (
+                  <p className="text-sm text-red-500 flex items-center gap-1">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.existingTeam}
+                  </p>
+                )}
+
+                {/* Show selected team info */}
+                {existingTeamId && (
+                  <div className="p-3 bg-muted/50 rounded-lg">
+                    {(() => {
+                      const selectedTeam = teams.find(t => t.id === existingTeamId);
+                      return selectedTeam ? (
+                        <div>
+                          <h4 className="font-medium">{selectedTeam.name}</h4>
+                          <p className="text-sm text-muted-foreground">{selectedTeam.description}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline">
+                              Líder: {selectedTeam.leader.name}
+                            </Badge>
+                            <Badge variant="outline">
+                              {selectedTeam.members.length} membros
+                            </Badge>
+                          </div>
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </TabsContent>
         </Tabs>
