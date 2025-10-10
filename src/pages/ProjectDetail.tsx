@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvitationButton } from '@/components/invitation/InvitationButton';
+import CreateTaskModal from '@/components/CreateTaskModal';
 import { 
   ArrowLeft, 
   Edit3, 
@@ -45,6 +46,7 @@ export default function ProjectDetail() {
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
 
   const project = projects.find(p => p.id === id);
   const projectTasks = tasks.filter(task => task.projectId === id);
@@ -295,7 +297,7 @@ export default function ProjectDetail() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Tarefas do Projeto</CardTitle>
-                    <Button size="sm" className="gap-2">
+                    <Button size="sm" className="gap-2" onClick={() => setIsCreateTaskModalOpen(true)}>
                       <Plus className="w-4 h-4" />
                       Nova Tarefa
                     </Button>
@@ -350,7 +352,7 @@ export default function ProjectDetail() {
                       <p className="text-muted-foreground mb-4">
                         Nenhuma tarefa criada ainda
                       </p>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => setIsCreateTaskModalOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" />
                         Criar Primeira Tarefa
                       </Button>
@@ -459,6 +461,12 @@ export default function ProjectDetail() {
           </Tabs>
         </div>
       </div>
+
+      <CreateTaskModal
+        open={isCreateTaskModalOpen}
+        onOpenChange={setIsCreateTaskModalOpen}
+        preselectedProjectId={project.id}
+      />
     </Layout>
   );
 }
