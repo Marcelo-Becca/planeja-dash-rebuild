@@ -9,7 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvitationButton } from '@/components/invitation/InvitationButton';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import { 
+import { MultiTeamSelector } from '@/components/MultiTeamSelector';
+import {
   ArrowLeft, 
   Edit3, 
   Calendar, 
@@ -42,11 +43,12 @@ const statusOptions = [
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { projects, tasks, updateProject, deleteProject, updateTask, users } = useLocalData();
+  const { projects, tasks, teams, updateProject, deleteProject, updateTask, users } = useLocalData();
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
+  const [isManagingTeams, setIsManagingTeams] = useState(false);
 
   const project = projects.find(p => p.id === id);
   const projectTasks = tasks.filter(task => task.projectId === id);
@@ -202,7 +204,7 @@ export default function ProjectDetail() {
             <TabsList className="grid w-full grid-cols-4 lg:w-fit">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
               <TabsTrigger value="tasks">Tarefas ({projectTasks.length})</TabsTrigger>
-              <TabsTrigger value="team">Equipe ({project.team?.length || 0})</TabsTrigger>
+              <TabsTrigger value="team">Equipes ({project.teams?.length || 0})</TabsTrigger>
               <TabsTrigger value="settings">Configurações</TabsTrigger>
             </TabsList>
 
@@ -285,8 +287,8 @@ export default function ProjectDetail() {
                 </Card>
                 <Card>
                   <CardContent className="p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-500">{project.team?.length || 0}</div>
-                    <div className="text-sm text-muted-foreground">Membros</div>
+                    <div className="text-2xl font-bold text-blue-500">{project.teams?.length || 0}</div>
+                    <div className="text-sm text-muted-foreground">Equipes</div>
                   </CardContent>
                 </Card>
               </div>
@@ -363,57 +365,169 @@ export default function ProjectDetail() {
             </TabsContent>
 
             <TabsContent value="team" className="space-y-6">
+              {/* Project Teams Section */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <Users className="h-5 w-5" />
-                      Equipe ({project.team?.length || 0})
+                      Equipes do Projeto ({project.teams?.length || 0})
                     </CardTitle>
-                    <Button size="sm" className="gap-2">
+                    <Button 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => setIsManagingTeams(!isManagingTeams)}
+                    >
                       <Plus className="w-4 h-4" />
-                      Adicionar Membro
+                      {isManagingTeams ? 'Concluir' : 'Gerenciar Equipes'}
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {project.team?.map((member, index) => (
-                      <div key={member.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
-                        <Avatar className="w-10 h-10 mr-3">
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            {member.avatar}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {member.name}
-                            {index === 0 && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
-                                Líder
+                <CardContent className="space-y-6">
+                  {/* Team Management Section */}
+                  {isManagingTeams && (
+                    <div className="p-4 bg-muted/30 rounded-lg border animate-in fade-in-50 slide-in-from-top-2">
+                      <h4 className="font-medium mb-3">Adicionar ou Remover Equipes</h4>
+                      <MultiTeamSelector
+                        teams={teams}
+                        selectedTeamIds={project.teams?.map(t => t.id) || []}
+                        onSelectionChange={(teamIds) => {
+                          const selectedTeams = teams.filter(t => teamIds.includes(t.id));
+                          handleUpdateProject({ teams: selectedTeams });
+                        }}
+                        placeholder="Selecione as equipes para este projeto"
+                      />
+                      <p className="text-xs text-muted-foreground mt-3">
+                        As equipes selecionadas terão acesso ao projeto e suas tarefas.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Teams Display */}
+                  {project.teams && project.teams.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {project.teams.map((team) => (
+                        <div
+                          key={team.id}
+                          className="p-4 border rounded-lg bg-card hover:shadow-md transition-all group"
+                          style={{
+                            borderLeftWidth: '4px',
+                            borderLeftColor: team.color
+                          }}
+                        >
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                                style={{
+                                  backgroundColor: `${team.color}20`,
+                                  color: team.color
+                                }}
+                              >
+                                <Users className="w-5 h-5" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-foreground truncate">
+                                  {team.name}
+                                </h4>
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {team.description || team.objective}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-1">
+                                <Users className="w-4 h-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">
+                                  {team.members.length} membro(s)
+                                </span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                {team.status === 'active' ? 'Ativa' : 'Arquivada'}
                               </Badge>
+                            </div>
+                          </div>
+
+                          {/* Team Members Preview */}
+                          <div className="flex items-center gap-1 mt-3">
+                            {team.members.slice(0, 5).map((member) => (
+                              <Avatar key={member.id} className="w-7 h-7 border-2 border-background">
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {member.user.avatar}
+                                </AvatarFallback>
+                              </Avatar>
+                            ))}
+                            {team.members.length > 5 && (
+                              <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
+                                +{team.members.length - 5}
+                              </div>
                             )}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {member.role}
-                          </p>
+                          </div>
                         </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
+                        <Users className="w-8 h-8 text-muted-foreground" />
                       </div>
-                    )) || (
-                      <div className="col-span-full text-center py-8">
-                        <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground mb-4">
-                          Nenhum membro na equipe ainda
-                        </p>
-                        <Button size="sm">
-                          <Plus className="w-4 h-4 mr-2" />
-                          Adicionar Primeiro Membro
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                      <h4 className="font-medium mb-2">Nenhuma equipe associada</h4>
+                      <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                        Adicione equipes ao projeto para facilitar a colaboração e organização das tarefas
+                      </p>
+                      <Button 
+                        size="sm" 
+                        onClick={() => setIsManagingTeams(true)}
+                        className="gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Adicionar Primeira Equipe
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+
+              {/* Individual Members Section (Legacy) */}
+              {project.team && project.team.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Membros Individuais ({project.team.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {project.team.map((member, index) => (
+                        <div key={member.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
+                          <Avatar className="w-10 h-10 mr-3">
+                            <AvatarFallback className="bg-primary/10 text-primary">
+                              {member.avatar}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {member.name}
+                              {index === 0 && (
+                                <Badge variant="secondary" className="ml-2 text-xs">
+                                  Líder
+                                </Badge>
+                              )}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {member.role}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">

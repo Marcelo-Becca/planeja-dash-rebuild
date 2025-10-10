@@ -46,6 +46,7 @@ export interface Project {
   deadline: Date;
   createdBy: User;
   team: User[];
+  teams?: Team[]; // Multiple teams support
   progress: number;
   tasksCount: number;
   completedTasks: number;
