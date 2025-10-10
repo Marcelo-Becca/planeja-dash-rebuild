@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import UserProfile from "./UserProfile";
-import logoImage from "@/assets/planeja-logo.jpg";
+import logoImage from "@/assets/planeja-logo-new.png";
 
 interface SidebarProps {
   isCollapsed: boolean;
