@@ -8,9 +8,11 @@ import DetailsPanel from "@/components/reports/DetailsPanel";
 import { Button } from "@/components/ui/button";
 import { useReportsAnalytics } from "@/hooks/useReportsAnalytics";
 import { useToast } from "@/hooks/use-toast";
-
 export default function Reports() {
-  const [detailsPanel, setDetailsPanel] = useState<{ type: string; data: any } | null>(null);
+  const [detailsPanel, setDetailsPanel] = useState<{
+    type: string;
+    data: any;
+  } | null>(null);
   const {
     filters,
     loading,
@@ -25,15 +27,15 @@ export default function Reports() {
     resetFilters,
     getTasksByCategory
   } = useReportsAnalytics();
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleChartClick = (type: string, data: any) => {
     toast({
       title: "Filtro interativo",
-      description: `Filtrar por ${type}: ${data}`,
+      description: `Filtrar por ${type}: ${data}`
     });
   };
-
   const handleDrillDown = (type: string, category: string) => {
     const tasks = getTasksByCategory(category);
     if (tasks.length > 0) {
@@ -43,45 +45,31 @@ export default function Reports() {
       });
     }
   };
-
   const handleTaskClick = (taskId: string) => {
     toast({
       title: "Navegação para tarefa",
-      description: `Abrindo tarefa ${taskId}`,
+      description: `Abrindo tarefa ${taskId}`
     });
   };
-
   const handleExportTasks = () => {
-    const csvContent = [
-      ['Título', 'Projeto', 'Responsável', 'Status', 'Prioridade', 'Criada em', 'Prazo'],
-      ...filteredTasks.map(task => [
-        task.title,
-        task.project,
-        task.assignee,
-        task.status,
-        task.priority,
-        task.createdAt,
-        task.deadline
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const csvContent = [['Título', 'Projeto', 'Responsável', 'Status', 'Prioridade', 'Criada em', 'Prazo'], ...filteredTasks.map(task => [task.title, task.project, task.assignee, task.status, task.priority, task.createdAt, task.deadline])].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], {
+      type: 'text/csv'
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'relatorio-tarefas.csv';
     a.click();
-    
     toast({
       title: "Relatório exportado",
-      description: "Download do arquivo CSV iniciado",
+      description: "Download do arquivo CSV iniciado"
     });
   };
-
   const getPeriodLabel = () => {
     const labels = {
       day: "Último dia",
-      week: "Últimos 7 dias", 
+      week: "Últimos 7 dias",
       month: "Mês atual",
       quarter: "Trimestre atual",
       year: "Ano atual",
@@ -89,25 +77,22 @@ export default function Reports() {
     };
     return labels[filters.period] || "Período selecionado";
   };
-
   const getDetailsPanelTitle = () => {
     const titles: Record<string, string> = {
       completed: "Tarefas Concluídas",
-      "in-progress": "Tarefas Em Andamento", 
+      "in-progress": "Tarefas Em Andamento",
       pending: "Tarefas Pendentes",
       overdue: "Tarefas Atrasadas"
     };
     return titles[detailsPanel?.type] || "Detalhes";
   };
-
-  return (
-    <Layout>
+  return <Layout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl font-bold text-foreground px-[10px] mx-0 py-[7px]">Relatórios</h1>
+            <p className="text-muted-foreground px-[10px]">
               Visões e métricas sobre projetos, tarefas e equipes
             </p>
           </div>
@@ -120,17 +105,10 @@ export default function Reports() {
         </div>
 
         {/* Filters */}
-        <ComprehensiveReportsFilters 
-          filters={filters}
-          onFiltersChange={updateFilters}
-          onReset={resetFilters}
-          loading={loading}
-          filterOptions={filterOptions}
-        />
+        <ComprehensiveReportsFilters filters={filters} onFiltersChange={updateFilters} onReset={resetFilters} loading={loading} filterOptions={filterOptions} />
 
         {/* No Data State */}
-        {!loading && !hasRealData && (
-          <div className="text-center py-12 bg-card rounded-lg border border-border">
+        {!loading && !hasRealData && <div className="text-center py-12 bg-card rounded-lg border border-border">
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
                 <Calendar className="w-8 h-8 text-muted-foreground" />
@@ -144,12 +122,10 @@ export default function Reports() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* No Data for Period */}
-        {!loading && hasRealData && filteredTasks.length === 0 && (
-          <div className="text-center py-12 bg-card rounded-lg border border-border">
+        {!loading && hasRealData && filteredTasks.length === 0 && <div className="text-center py-12 bg-card rounded-lg border border-border">
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
                 <Calendar className="w-8 h-8 text-muted-foreground" />
@@ -163,44 +139,18 @@ export default function Reports() {
                 </p>
               </div>
             </div>
-          </div>
-        )}
+          </div>}
 
         {/* Main Content */}
-        {hasRealData && (filteredTasks.length > 0 || loading) && (
-          <div className="space-y-6">
-            <InteractiveCharts
-              timelineData={timelineData}
-              projectPerformanceData={projectPerformanceData}
-              taskDistributionData={taskDistributionData}
-              teamProductivityData={teamProductivityData}
-              loading={loading}
-              onChartClick={handleChartClick}
-              onDrillDown={handleDrillDown}
-            />
-          </div>
-        )}
+        {hasRealData && (filteredTasks.length > 0 || loading) && <div className="space-y-6">
+            <InteractiveCharts timelineData={timelineData} projectPerformanceData={projectPerformanceData} taskDistributionData={taskDistributionData} teamProductivityData={teamProductivityData} loading={loading} onChartClick={handleChartClick} onDrillDown={handleDrillDown} />
+          </div>}
 
         {/* Detailed Tables */}
-        {hasRealData && (filteredTasks.length > 0 || loading) && (
-          <DetailedTables
-            tasks={filteredTasks}
-            teamProductivityData={teamProductivityData}
-            loading={loading}
-            onTaskClick={handleTaskClick}
-            onExportTasks={handleExportTasks}
-          />
-        )}
+        {hasRealData && (filteredTasks.length > 0 || loading) && <DetailedTables tasks={filteredTasks} teamProductivityData={teamProductivityData} loading={loading} onTaskClick={handleTaskClick} onExportTasks={handleExportTasks} />}
 
         {/* Details Panel */}
-        <DetailsPanel 
-          isOpen={!!detailsPanel}
-          title={detailsPanel?.type ? `Tarefas - ${detailsPanel.type}` : "Detalhes"}
-          tasks={detailsPanel?.data || []}
-          onClose={() => setDetailsPanel(null)}
-          onTaskClick={handleTaskClick}
-        />
+        <DetailsPanel isOpen={!!detailsPanel} title={detailsPanel?.type ? `Tarefas - ${detailsPanel.type}` : "Detalhes"} tasks={detailsPanel?.data || []} onClose={() => setDetailsPanel(null)} onTaskClick={handleTaskClick} />
       </div>
-    </Layout>
-  );
+    </Layout>;
 }
