@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Users, BarChart3, Clock, Zap, Shield, ArrowRight, User, Settings, Target, Star, Quote } from "lucide-react";
-import heroMockup from "@/assets/planeja-dashboard-mockup.jpg";
+import heroMockup from "@/assets/planeja-mockup-new.jpg";
 import planejaLogo from "@/assets/planeja-logo-new.png";
 
 export default function Home() {
