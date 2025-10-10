@@ -1,160 +1,108 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Calendar as CalendarIcon, Loader2, Plus, X, User, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { useLocalData } from "@/hooks/useLocalData";
-import { toast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ptBR } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import ProgressBar from "@/components/ProgressBar";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Calendar as CalendarIcon,
+  Plus,
+  X,
+  AlertCircle,
+  Flag,
+  User,
+  CheckSquare,
+  Save,
+  Undo2
+} from "lucide-react";
+import { mockProjects, mockUsers } from "@/data/mockData";
+import { useLocalData } from "@/hooks/useLocalData";
 
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preselectedProjectId?: string;
-  taskToEdit?: any;
-  onTaskCreated?: () => void;
+}
+
+interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
 }
 
 interface TaskFormData {
   title: string;
-  shortDescription: string;
   description: string;
   projectId: string;
   assigneeIds: string[];
-  teamIds: string[];
-  priority: string;
-  status: string;
-  deadline?: Date;
-  tags: string[];
-  progress: number;
+  priority: "low" | "medium" | "high";
+  status: "pending" | "in-progress" | "under-review";
+  dueDate: Date | undefined;
+  subtasks: SubTask[];
 }
 
 const priorityOptions = [
-  { value: 'high', label: 'Alta', color: 'text-red-400', bg: 'bg-red-500/10' },
-  { value: 'medium', label: 'Média', color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-  { value: 'low', label: 'Baixa', color: 'text-blue-400', bg: 'bg-blue-500/10' }
+  { value: "low", label: "Baixa", color: "bg-green-100 text-green-800 border-green-200" },
+  { value: "medium", label: "Média", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  { value: "high", label: "Alta", color: "bg-red-100 text-red-800 border-red-200" }
 ];
 
 const statusOptions = [
-  { value: 'pending', label: 'Pendente' },
-  { value: 'in-progress', label: 'Em andamento' },
-  { value: 'under-review', label: 'Em revisão' },
-  { value: 'completed', label: 'Concluída' }
+  { value: "pending", label: "Pendente" },
+  { value: "in-progress", label: "Em andamento" },
+  { value: "under-review", label: "Em revisão" }
 ];
 
-const progressPresets = [0, 25, 50, 75, 100];
-
-export default function CreateTaskModal({ 
-  open, 
-  onOpenChange, 
-  preselectedProjectId,
-  taskToEdit,
-  onTaskCreated
-}: CreateTaskModalProps) {
-  const { projects, users, teams, addTask, updateTask } = useLocalData();
+export default function CreateTaskModal({ open, onOpenChange, preselectedProjectId }: CreateTaskModalProps) {
+  const { toast } = useToast();
+  const { projects, users, addTask } = useLocalData();
   const [isLoading, setIsLoading] = useState(false);
-  const [newTag, setNewTag] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const isEditMode = !!taskToEdit;
   
   const [formData, setFormData] = useState<TaskFormData>({
-    title: '',
-    shortDescription: '',
-    description: '',
-    projectId: preselectedProjectId || '',
+    title: "",
+    description: "",
+    projectId: preselectedProjectId || "",
     assigneeIds: [],
-    teamIds: [],
-    priority: 'medium',
-    status: 'pending',
-    deadline: undefined,
-    tags: [],
-    progress: 0
+    priority: "medium",
+    status: "pending",
+    dueDate: undefined,
+    subtasks: []
   });
 
-  // Load task data when editing
-  useEffect(() => {
-    if (taskToEdit) {
-      setFormData({
-        title: taskToEdit.title || '',
-        shortDescription: taskToEdit.shortDescription || '',
-        description: taskToEdit.description || '',
-        projectId: taskToEdit.projectId || '',
-        assigneeIds: taskToEdit.assigneeIds || [],
-        teamIds: taskToEdit.teamIds || [],
-        priority: taskToEdit.priority || 'medium',
-        status: taskToEdit.status || 'pending',
-        deadline: taskToEdit.deadline ? new Date(taskToEdit.deadline) : undefined,
-        tags: taskToEdit.tags || [],
-        progress: taskToEdit.progress || 0
-      });
-    } else {
-      setFormData({
-        title: '',
-        shortDescription: '',
-        description: '',
-        projectId: preselectedProjectId || '',
-        assigneeIds: [],
-        teamIds: [],
-        priority: 'medium',
-        status: 'pending',
-        deadline: undefined,
-        tags: [],
-        progress: 0
-      });
-    }
-  }, [taskToEdit, preselectedProjectId, open]);
+  const [newSubtask, setNewSubtask] = useState("");
 
-  // Auto-adjust status based on progress
-  useEffect(() => {
-    if (formData.progress > 0 && formData.progress < 100 && formData.status === 'pending') {
-      setFormData(prev => ({ ...prev, status: 'in-progress' }));
-    } else if (formData.progress === 100 && formData.status !== 'completed') {
-      setFormData(prev => ({ ...prev, status: 'completed' }));
-    }
-  }, [formData.progress]);
-
-  // Auto-adjust progress when status is completed
-  useEffect(() => {
-    if (formData.status === 'completed' && formData.progress !== 100) {
-      setFormData(prev => ({ ...prev, progress: 100 }));
-    }
-  }, [formData.status]);
-
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const newErrors: Record<string, string> = {};
-
+    
     if (!formData.title.trim()) {
-      newErrors.title = 'Título é obrigatório';
-    } else if (formData.title.trim().length > 100) {
-      newErrors.title = 'Título muito longo (máx. 100 caracteres)';
+      newErrors.title = "Título é obrigatório";
     }
-
-    if (!formData.projectId) {
-      newErrors.projectId = 'Selecione um projeto';
+    
+    if (!formData.dueDate) {
+      newErrors.dueDate = "Data de entrega é obrigatória";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (saveAndCreateAnother = false) => {
+  const handleSubmit = async (saveAndCreate = false) => {
     if (!validateForm()) {
       toast({
-        title: "Erro de validação",
-        description: "Por favor, corrija os erros antes de continuar",
-        variant: "destructive"
+        title: "Erro na validação",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
       });
       return;
     }
@@ -162,58 +110,58 @@ export default function CreateTaskModal({
     setIsLoading(true);
     
     try {
-      // Simulate local storage save
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const assignedUsers = users.filter(u => formData.assigneeIds.includes(u.id));
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const taskData = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
-        projectId: formData.projectId,
-        assigneeIds: formData.assigneeIds,
-        teamIds: formData.teamIds,
-        priority: formData.priority as any,
+      // Create task with local data
+      const assignedUsers = users.filter(u => formData.assigneeIds.includes(u.id));
+      const createdBy = users[0]; // Use first user as creator for demo
+      
+      const newTask = addTask({
+        title: formData.title,
+        description: formData.description,
         status: formData.status as any,
-        deadline: formData.deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        progress: formData.progress,
-        tags: formData.tags,
-        createdAt: taskToEdit?.createdAt || new Date(),
-        createdBy: users[0],
+        priority: formData.priority,
+        deadline: formData.dueDate!,
+        createdAt: new Date(),
+        createdBy,
         assignedTo: assignedUsers,
+        projectId: formData.projectId || 'independent',
         comments: []
-      };
+      });
+      
+      toast({
+        title: "Tarefa criada com sucesso!",
+        description: `A tarefa "${formData.title}" foi adicionada à sua lista.`,
+        action: saveAndCreate ? undefined : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              toast({
+                title: "Ação desfeita",
+                description: "Tarefa removida (simulação)",
+              });
+            }}
+            className="gap-1"
+          >
+            <Undo2 className="w-3 h-3" />
+            Desfazer
+          </Button>
+        ),
+      });
 
-      if (isEditMode) {
-        updateTask(taskToEdit.id, taskData);
-        toast({
-          title: "Tarefa atualizada",
-          description: `"${formData.title}" foi atualizada com sucesso.`
-        });
-      } else {
-        addTask(taskData);
-        toast({
-          title: "Tarefa criada",
-          description: `"${formData.title}" foi criada com sucesso.`
-        });
-      }
-
-      onTaskCreated?.();
-
-      // Reset form if creating another, otherwise close
-      if (saveAndCreateAnother && !isEditMode) {
+      if (saveAndCreate) {
+        // Reset form for new task
         setFormData({
-          title: '',
-          shortDescription: '',
-          description: '',
-          projectId: formData.projectId,
+          title: "",
+          description: "",
+          projectId: formData.projectId, // Keep project selected
           assigneeIds: [],
-          teamIds: [],
-          priority: 'medium',
-          status: 'pending',
-          deadline: undefined,
-          tags: [],
-          progress: 0
+          priority: "medium",
+          status: "pending",
+          dueDate: undefined,
+          subtasks: []
         });
         setErrors({});
       } else {
@@ -221,9 +169,9 @@ export default function CreateTaskModal({
       }
     } catch (error) {
       toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar localmente — tente novamente.",
-        variant: "destructive"
+        title: "Erro ao criar tarefa",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -233,162 +181,117 @@ export default function CreateTaskModal({
   const handleCancel = () => {
     const hasData = formData.title || formData.description || formData.assigneeIds.length > 0;
     
-    if (hasData && !isEditMode) {
-      if (window.confirm('Deseja descartar as alterações?')) {
+    if (hasData) {
+      if (confirm("Tem certeza que deseja cancelar? Todas as informações serão perdidas.")) {
         onOpenChange(false);
-        resetForm();
       }
     } else {
       onOpenChange(false);
-      resetForm();
     }
   };
 
-  const resetForm = () => {
-    setTimeout(() => {
-      setFormData({
-        title: '',
-        shortDescription: '',
-        description: '',
-        projectId: preselectedProjectId || '',
-        assigneeIds: [],
-        teamIds: [],
-        priority: 'medium',
-        status: 'pending',
-        deadline: undefined,
-        tags: [],
-        progress: 0
-      });
-      setErrors({});
-    }, 200);
-  };
-
-  const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+  const addSubtask = () => {
+    if (newSubtask.trim()) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        subtasks: [...prev.subtasks, {
+          id: Date.now().toString(),
+          title: newSubtask.trim(),
+          completed: false
+        }]
       }));
-      setNewTag('');
+      setNewSubtask("");
     }
   };
 
-  const removeTag = (tag: string) => {
+  const removeSubtask = (id: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(t => t !== tag)
+      subtasks: prev.subtasks.filter(st => st.id !== id)
     }));
   };
 
-  const toggleAssignee = (userId: string) => {
+  const toggleAssignee = (memberId: string) => {
     setFormData(prev => ({
       ...prev,
-      assigneeIds: prev.assigneeIds.includes(userId)
-        ? prev.assigneeIds.filter(id => id !== userId)
-        : [...prev.assigneeIds, userId]
+      assigneeIds: prev.assigneeIds.includes(memberId)
+        ? prev.assigneeIds.filter(id => id !== memberId)
+        : [...prev.assigneeIds, memberId]
     }));
   };
 
-  const toggleTeam = (teamId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      teamIds: prev.teamIds.includes(teamId)
-        ? prev.teamIds.filter(id => id !== teamId)
-        : [...prev.teamIds, teamId]
-    }));
+
+  const getSelectedProject = () => {
+    return projects.find(p => p.id === formData.projectId);
   };
 
-  const getSelectedProject = () => projects.find(p => p.id === formData.projectId);
-  const projectTeams = teams;
-  const projectMembers = getSelectedProject()?.team || [];
-  const hasMembers = projectMembers.length > 0;
-
-  const canSubmit = formData.title.trim().length > 0;
+  const getSelectedMembers = () => {
+    return users.filter(m => formData.assigneeIds.includes(m.id));
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <DialogTitle className="text-xl">
-            {isEditMode ? 'Editar Tarefa' : 'Criar Tarefa'}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            Criar Nova Tarefa
           </DialogTitle>
-          <DialogDescription>
-            {isEditMode 
-              ? 'Atualize os detalhes da tarefa abaixo'
-              : 'Preencha os campos para criar uma nova tarefa'
-            }
-          </DialogDescription>
+          <p className="text-sm text-muted-foreground">
+            Defina os detalhes da sua atividade para organizar melhor o seu fluxo de trabalho
+          </p>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-5 py-4">
-            {/* Título */}
-            <div className="space-y-2">
-              <Label htmlFor="title" className="flex items-center gap-2">
-                Título <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="title"
-                placeholder="Digite o título da tarefa"
-                value={formData.title}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, title: e.target.value }));
-                  if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
-                }}
-                className={cn(errors.title && "border-destructive")}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.title}
-                </p>
-              )}
-            </div>
-
-            {/* Descrição Curta */}
-            <div className="space-y-2">
-              <Label htmlFor="shortDescription">Descrição Curta</Label>
-              <Input
-                id="shortDescription"
-                placeholder="Uma linha resumindo a tarefa"
-                value={formData.shortDescription}
-                onChange={(e) => setFormData(prev => ({ ...prev, shortDescription: e.target.value }))}
-                maxLength={150}
-              />
-              <p className="text-xs text-muted-foreground">
-                {formData.shortDescription.length}/150 caracteres
+        <div className="space-y-6 py-4">
+          {/* Título */}
+          <div className="space-y-2">
+            <Label htmlFor="title" className="flex items-center gap-2">
+              Título da tarefa
+              <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="title"
+              placeholder="Ex.: Implementar autenticação de login"
+              value={formData.title}
+              onChange={(e) => {
+                setFormData(prev => ({ ...prev, title: e.target.value }));
+                if (errors.title) setErrors(prev => ({ ...prev, title: "" }));
+              }}
+              className={cn(errors.title && "border-red-500 ring-red-500")}
+            />
+            {errors.title && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.title}
               </p>
-            </div>
+            )}
+          </div>
 
-            {/* Descrição Completa */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição Completa</Label>
-              <Textarea
-                id="description"
-                placeholder="Descreva os detalhes da tarefa..."
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                rows={4}
-                className="resize-none"
-              />
-            </div>
+          {/* Descrição */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              placeholder="Descreva os detalhes da tarefa..."
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              className="min-h-20"
+            />
+          </div>
 
+          {/* Projeto e Responsável */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Projeto */}
             <div className="space-y-2">
-              <Label htmlFor="project" className="flex items-center gap-2">
-                Projeto <span className="text-destructive">*</span>
-              </Label>
+              <Label>Projeto associado</Label>
               <Select
                 value={formData.projectId}
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, projectId: value, assigneeIds: [], teamIds: [] }));
-                  if (errors.projectId) setErrors(prev => ({ ...prev, projectId: '' }));
-                }}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, projectId: value }))}
               >
-                <SelectTrigger className={cn(errors.projectId && "border-destructive")}>
+                <SelectTrigger>
                   <SelectValue placeholder="Selecione um projeto" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="independent">Tarefa independente</SelectItem>
                   {projects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       {project.name}
@@ -396,265 +299,262 @@ export default function CreateTaskModal({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.projectId && (
-                <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.projectId}
-                </p>
+              {getSelectedProject() && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                  {getSelectedProject()?.name}
+                </div>
               )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Prioridade */}
-              <div className="space-y-2">
-                <Label htmlFor="priority">Prioridade</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priorityOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        <span className={option.color}>{option.label}</span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Status */}
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Prazo */}
-            <div className="space-y-2">
-              <Label>Prazo</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.deadline && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.deadline ? (
-                      format(formData.deadline, "PPP", { locale: ptBR })
-                    ) : (
-                      <span>Selecione uma data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={formData.deadline}
-                    onSelect={(date) => setFormData(prev => ({ ...prev, deadline: date }))}
-                    initialFocus
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
             </div>
 
             {/* Responsáveis */}
             <div className="space-y-2">
               <Label>Responsáveis</Label>
-              {!hasMembers ? (
-                <div className="p-4 border border-dashed rounded-lg text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Nenhum membro no projeto
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Adicione membros na aba de equipe do projeto
-                  </p>
-                </div>
-              ) : (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      <User className="mr-2 h-4 w-4" />
-                      {formData.assigneeIds.length > 0
-                        ? `${formData.assigneeIds.length} selecionado(s)`
-                        : "Selecionar responsáveis"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 pointer-events-auto">
-                    <div className="space-y-2">
-                      {projectMembers.map((member) => (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    <User className="h-4 w-4 mr-2" />
+                    {formData.assigneeIds.length === 0 
+                      ? "Selecionar responsáveis" 
+                      : `${formData.assigneeIds.length} selecionado(s)`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Membros da equipe</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {users.map((member) => (
                         <div key={member.id} className="flex items-center space-x-2">
                           <Checkbox
-                            id={`member-${member.id}`}
+                            id={member.id}
                             checked={formData.assigneeIds.includes(member.id)}
                             onCheckedChange={() => toggleAssignee(member.id)}
                           />
-                          <label
-                            htmlFor={`member-${member.id}`}
-                            className="flex items-center gap-2 flex-1 cursor-pointer"
-                          >
-                            <Avatar className="w-6 h-6">
-                              <AvatarFallback className="text-xs">
-                                {member.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm">{member.name}</span>
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback>{member.avatar}</AvatarFallback>
+                          </Avatar>
+                          <label htmlFor={member.id} className="text-sm cursor-pointer flex-1">
+                            {member.name} - {member.role}
                           </label>
                         </div>
                       ))}
                     </div>
-                  </PopoverContent>
-                </Popover>
-              )}
-            </div>
-
-            {/* Equipes */}
-            {projectTeams.length > 0 && (
-              <div className="space-y-2">
-                <Label>Equipes</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start">
-                      <User className="mr-2 h-4 w-4" />
-                      {formData.teamIds.length > 0
-                        ? `${formData.teamIds.length} equipe(s) selecionada(s)`
-                        : "Selecionar equipes"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 pointer-events-auto">
-                    <div className="space-y-2">
-                      {projectTeams.map((team) => (
-                        <div key={team.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`team-${team.id}`}
-                            checked={formData.teamIds.includes(team.id)}
-                            onCheckedChange={() => toggleTeam(team.id)}
-                          />
-                          <label
-                            htmlFor={`team-${team.id}`}
-                            className="flex-1 text-sm cursor-pointer"
-                          >
-                            {team.name}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="tags"
-                  placeholder="Digite uma tag e pressione Enter"
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addTag();
-                    }
-                  }}
-                />
-                <Button type="button" size="sm" onClick={addTag}>
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="gap-1">
-                      {tag}
-                      <X
-                        className="w-3 h-3 cursor-pointer hover:text-destructive"
-                        onClick={() => removeTag(tag)}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              
+              {/* Selected members */}
+              {getSelectedMembers().length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {getSelectedMembers().map((member) => (
+                    <Badge key={member.id} variant="secondary" className="flex items-center gap-1">
+                      <Avatar className="h-4 w-4">
+                        <AvatarImage src={member.avatar} />
+                        <AvatarFallback className="text-xs">{member.avatar}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs">{member.name}</span>
+                      <X 
+                        className="h-3 w-3 cursor-pointer hover:text-red-500" 
+                        onClick={() => toggleAssignee(member.id)}
                       />
                     </Badge>
                   ))}
                 </div>
               )}
             </div>
+          </div>
 
-            {/* Progresso */}
-            <div className="space-y-3">
-              <Label>Progresso Inicial</Label>
+          {/* Prioridade e Status */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Prioridade */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Flag className="h-4 w-4" />
+                Prioridade
+              </Label>
               <div className="flex gap-2">
-                {progressPresets.map((preset) => (
+                {priorityOptions.map((option) => (
                   <Button
-                    key={preset}
+                    key={option.value}
                     type="button"
-                    variant={formData.progress === preset ? "default" : "outline"}
+                    variant={formData.priority === option.value ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setFormData(prev => ({ ...prev, progress: preset }))}
+                    onClick={() => setFormData(prev => ({ ...prev, priority: option.value as any }))}
+                    className={cn(
+                      "flex-1",
+                      formData.priority === option.value && option.color
+                    )}
                   >
-                    {preset}%
+                    {option.label}
                   </Button>
                 ))}
               </div>
-              <ProgressBar
-                label="Progresso"
-                current={formData.progress}
-                total={100}
-                variant="primary"
-              />
+            </div>
+
+            {/* Status */}
+            <div className="space-y-2">
+              <Label>Status inicial</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as any }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </ScrollArea>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t bg-muted/30">
+          {/* Data de entrega */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <CalendarIcon className="h-4 w-4" />
+              Data de entrega
+              <span className="text-red-500">*</span>
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.dueDate && "text-muted-foreground",
+                    errors.dueDate && "border-red-500"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.dueDate ? (
+                    format(formData.dueDate, "PPP", { locale: ptBR })
+                  ) : (
+                    <span>Selecione uma data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={formData.dueDate}
+                  onSelect={(date) => {
+                    setFormData(prev => ({ ...prev, dueDate: date }));
+                    if (errors.dueDate) setErrors(prev => ({ ...prev, dueDate: "" }));
+                  }}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.dueDate && (
+              <p className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {errors.dueDate}
+              </p>
+            )}
+          </div>
+
+          {/* Subtarefas */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2">
+              <CheckSquare className="h-4 w-4" />
+              Subtarefas (opcional)
+            </Label>
+            
+            {/* Add subtask */}
+            <div className="flex gap-2">
+              <Input
+                placeholder="Digite uma subtarefa..."
+                value={newSubtask}
+                onChange={(e) => setNewSubtask(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addSubtask()}
+              />
+              <Button type="button" size="sm" onClick={addSubtask}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Subtasks list */}
+            {formData.subtasks.length > 0 && (
+              <div className="space-y-2 bg-muted/50 p-3 rounded-lg">
+                {formData.subtasks.map((subtask) => (
+                  <div key={subtask.id} className="flex items-center gap-2">
+                    <Checkbox
+                      checked={subtask.completed}
+                      onCheckedChange={(checked) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          subtasks: prev.subtasks.map(st => 
+                            st.id === subtask.id ? { ...st, completed: !!checked } : st
+                          )
+                        }));
+                      }}
+                    />
+                    <span className={cn(
+                      "flex-1 text-sm",
+                      subtask.completed && "line-through text-muted-foreground"
+                    )}>
+                      {subtask.title}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeSubtask(subtask.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
           <Button
-            type="button"
-            variant="outline"
             onClick={handleCancel}
-            disabled={isLoading}
+            variant="outline"
+            className="sm:order-1"
           >
             Cancelar
           </Button>
-          <div className="flex gap-2">
-            {!isEditMode && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleSubmit(true)}
-                disabled={!canSubmit || isLoading}
-              >
-                Salvar e criar outra
-              </Button>
+          
+          <Button
+            onClick={() => handleSubmit(true)}
+            variant="outline"
+            disabled={isLoading}
+            className="sm:order-2"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Salvar e criar outra
+          </Button>
+
+          <Button
+            onClick={() => handleSubmit(false)}
+            disabled={isLoading}
+            className="sm:order-3"
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Salvar tarefa
+              </>
             )}
-            <Button
-              type="button"
-              onClick={() => handleSubmit(false)}
-              disabled={!canSubmit || isLoading}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditMode ? 'Salvar alterações' : 'Criar tarefa'}
-            </Button>
-          </div>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

@@ -30,7 +30,6 @@ import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
-import CreateTaskModal from '@/components/CreateTaskModal';
 
 const statusOptions = [
   { value: 'active', label: 'Ativo', color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -42,11 +41,10 @@ const statusOptions = [
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { projects, tasks, updateProject, deleteProject, updateTask, addTask, users } = useLocalData();
+  const { projects, tasks, updateProject, deleteProject, updateTask, users } = useLocalData();
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   const project = projects.find(p => p.id === id);
   const projectTasks = tasks.filter(task => task.projectId === id);
@@ -297,7 +295,7 @@ export default function ProjectDetail() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Tarefas do Projeto</CardTitle>
-                    <Button size="sm" className="gap-2" onClick={() => setIsTaskModalOpen(true)}>
+                    <Button size="sm" className="gap-2">
                       <Plus className="w-4 h-4" />
                       Nova Tarefa
                     </Button>
@@ -352,7 +350,7 @@ export default function ProjectDetail() {
                       <p className="text-muted-foreground mb-4">
                         Nenhuma tarefa criada ainda
                       </p>
-                      <Button size="sm" onClick={() => setIsTaskModalOpen(true)}>
+                      <Button size="sm">
                         <Plus className="w-4 h-4 mr-2" />
                         Criar Primeira Tarefa
                       </Button>
@@ -461,15 +459,6 @@ export default function ProjectDetail() {
           </Tabs>
         </div>
       </div>
-
-      <CreateTaskModal
-        open={isTaskModalOpen}
-        onOpenChange={setIsTaskModalOpen}
-        preselectedProjectId={project.id}
-        onTaskCreated={() => {
-          // Tasks are already updated via useLocalData
-        }}
-      />
     </Layout>
   );
 }
