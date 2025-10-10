@@ -31,7 +31,6 @@ import UserSelector from '@/components/UserSelector';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
 import CreateTaskModal from '@/components/CreateTaskModal';
-import QuickTaskInput from '@/components/QuickTaskInput';
 
 const statusOptions = [
   { value: 'active', label: 'Ativo', color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -357,25 +356,6 @@ export default function ProjectDetail() {
                         <Plus className="w-4 h-4 mr-2" />
                         Criar Primeira Tarefa
                       </Button>
-                      <QuickTaskInput 
-                        projectId={project.id}
-                        onTaskCreated={(title) => {
-                          addTask({
-                            title,
-                            description: '',
-                            projectId: project.id,
-                            priority: 'medium',
-                            status: 'pending',
-                            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                            createdAt: new Date(),
-                            createdBy: users[0],
-                            assignedTo: [],
-                            comments: []
-                          });
-                          setIsTaskModalOpen(true);
-                        }}
-                        className="mt-4 max-w-md mx-auto"
-                      />
                     </div>
                   )}
                 </CardContent>
