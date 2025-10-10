@@ -30,6 +30,8 @@ import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
+import CreateTaskModal from '@/components/CreateTaskModal';
+import QuickTaskInput from '@/components/QuickTaskInput';
 
 const statusOptions = [
   { value: 'active', label: 'Ativo', color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -45,6 +47,7 @@ export default function ProjectDetail() {
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   const project = projects.find(p => p.id === id);
   const projectTasks = tasks.filter(task => task.projectId === id);
@@ -295,7 +298,7 @@ export default function ProjectDetail() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Tarefas do Projeto</CardTitle>
-                    <Button size="sm" className="gap-2">
+                    <Button size="sm" className="gap-2" onClick={() => setIsTaskModalOpen(true)}>
                       <Plus className="w-4 h-4" />
                       Nova Tarefa
                     </Button>
@@ -350,10 +353,32 @@ export default function ProjectDetail() {
                       <p className="text-muted-foreground mb-4">
                         Nenhuma tarefa criada ainda
                       </p>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => setIsTaskModalOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" />
                         Criar Primeira Tarefa
                       </Button>
+                      <QuickTaskInput 
+                        projectId={project.id}
+                        onTaskCreated={(title) => {
+                          addTask({
+                            title,
+                            description: '',
+                            projectId: project.id,
+                            priority: 'medium',
+                            status: 'pending',
+                            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                            progress: 0,
+                            createdAt: new Date(),
+                            createdBy: users[0],
+                            assignedTo: [],
+                            comments: [],
+                            assigneeIds: [],
+                            teamIds: []
+                          });
+                          setIsTaskModalOpen(true);
+                        }}
+                        className="mt-4 max-w-md mx-auto"
+                      />
                     </div>
                   )}
                 </CardContent>
