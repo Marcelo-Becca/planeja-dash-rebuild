@@ -13,17 +13,16 @@ import { MultiTeamSelector } from '@/components/MultiTeamSelector';
 import {
   ArrowLeft, 
   Edit3, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Users, 
   CheckCircle2, 
   Clock, 
   Plus, 
-  Archive,
-  Copy,
   Trash2,
   Activity,
   Target,
-  Settings
+  Settings,
+  User
 } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,6 +31,13 @@ import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const statusOptions = [
   { value: 'active', label: 'Ativo', color: 'text-blue-400', bg: 'bg-blue-500/10' },
@@ -129,26 +135,6 @@ export default function ProjectDetail() {
     }
   };
 
-  const handleDuplicateProject = () => {
-    const duplicatedProject = {
-      ...project,
-      name: `${project.name} (Cópia)`,
-      status: 'active',
-      progress: 0,
-      completedTasks: 0,
-      tasksCount: 0,
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
-    };
-    delete duplicatedProject.id;
-    
-    // This would need to be implemented in useLocalData
-    // addProject(duplicatedProject);
-    showUndoToast('Projeto duplicado', {
-      message: 'Uma cópia do projeto foi criada',
-      undo: () => {} // Would need actual implementation
-    });
-  };
-
   return (
     <Layout>
       {/* Header */}
@@ -237,7 +223,7 @@ export default function ProjectDetail() {
                     </select>
                     
                     <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 mr-1" />
+                      <CalendarIcon className="w-4 h-4 mr-1" />
                       <span className={cn(
                         "font-medium",
                         isOverdue && "text-red-400"
@@ -539,20 +525,111 @@ export default function ProjectDetail() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Button variant="outline" onClick={handleDuplicateProject} className="gap-2">
-                      <Copy className="w-4 h-4" />
-                      Duplicar Projeto
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleUpdateProject({ status: 'archived' })}
-                      className="gap-2"
+                  {/* Project Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="project-name" className="text-sm font-medium">
+                      Nome do Projeto
+                    </Label>
+                    <Input
+                      id="project-name"
+                      value={project.name}
+                      onChange={(e) => handleUpdateProject({ name: e.target.value })}
+                      placeholder="Nome do projeto"
+                      className="max-w-md"
+                    />
+                  </div>
+
+                  {/* Project Deadline */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Prazo Final
+                    </Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-full max-w-md justify-start text-left font-normal"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {project.deadline ? (
+                            format(new Date(project.deadline), "PPP", { locale: ptBR })
+                          ) : (
+                            <span>Selecione uma data</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={new Date(project.deadline)}
+                          onSelect={(date) => {
+                            if (date) {
+                              handleUpdateProject({ deadline: date });
+                            }
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Project Category */}
+                  <div className="space-y-2">
+                    <Label htmlFor="project-category" className="text-sm font-medium">
+                      Categoria
+                    </Label>
+                    <Select
+                      value={(project as any).category || ''}
+                      onValueChange={(value) => handleUpdateProject({ category: value })}
                     >
-                      <Archive className="w-4 h-4" />
-                      Arquivar Projeto
-                    </Button>
+                      <SelectTrigger className="max-w-md">
+                        <SelectValue placeholder="Selecione uma categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Desenvolvimento">Desenvolvimento</SelectItem>
+                        <SelectItem value="Design">Design</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="Vendas">Vendas</SelectItem>
+                        <SelectItem value="Operações">Operações</SelectItem>
+                        <SelectItem value="Pesquisa">Pesquisa</SelectItem>
+                        <SelectItem value="Outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Project Leader */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Líder do Projeto
+                    </Label>
+                    <Select
+                      value={project.createdBy?.id || ''}
+                      onValueChange={(userId) => {
+                        const newLeader = users.find(u => u.id === userId);
+                        if (newLeader) {
+                          handleUpdateProject({ createdBy: newLeader });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="max-w-md">
+                        <SelectValue placeholder="Selecione o líder" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-xs">
+                                  {user.avatar}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{user.name} - {user.role}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="pt-6 border-t border-destructive/20">
