@@ -656,7 +656,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
           <TabsContent value="team" className="space-y-6 mt-6">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Selecionar Equipe Existente</h3>
+                <h3 className="text-lg font-medium">Selecionar Equipes</h3>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={autoLinkTeam}
@@ -670,10 +670,6 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
               {/* Existing Team Selection */}
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  Selecionar Equipe
-                  <span className="text-red-500">*</span>
-                </Label>
                 <Select
                   value={existingTeamId}
                   onValueChange={(value) => {
@@ -682,7 +678,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   }}
                 >
                   <SelectTrigger className={cn(errors.existingTeam && "border-red-500")}>
-                    <SelectValue placeholder="Selecione uma equipe" />
+                    <SelectValue placeholder="Selecione aqui suas equipes" />
                   </SelectTrigger>
                   <SelectContent>
                     {teams.map((team) => (
