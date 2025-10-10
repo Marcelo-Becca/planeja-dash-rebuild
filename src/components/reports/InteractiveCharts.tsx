@@ -137,9 +137,7 @@ export default function InteractiveCharts({
                 <LineChart className="w-5 h-5 text-chart-1" />
                 Tarefas Concluídas por Dia
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Últimos 30 dias • Clique em pontos para detalhar
-              </p>
+              
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
@@ -178,9 +176,7 @@ export default function InteractiveCharts({
                 <PieChart className="w-5 h-5 text-chart-2" />
                 Distribuição de Status
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Por status • Clique em segmentos para listar
-              </p>
+              
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
@@ -225,9 +221,7 @@ export default function InteractiveCharts({
                 <BarChart3 className="w-5 h-5 text-chart-3" />
                 Progresso por Projeto
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Taxa de conclusão • Clique em barras para abrir projeto
-              </p>
+              
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
@@ -259,9 +253,7 @@ export default function InteractiveCharts({
                 <TrendingUp className="w-5 h-5 text-chart-4" />
                 Produtividade por Equipe
               </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Tarefas por equipe • Clique para filtrar por equipe
-              </p>
+              
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm">
