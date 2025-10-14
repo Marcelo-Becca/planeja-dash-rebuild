@@ -114,6 +114,30 @@ export default function TeamDetail() {
     }
   };
 
+  const handleRemoveMember = (memberId: string) => {
+    if (window.confirm('Tem certeza que deseja remover este membro da equipe?')) {
+      const updatedMembers = team.members?.filter(m => m.id !== memberId) || [];
+      handleUpdateTeam({ members: updatedMembers });
+    }
+  };
+
+  const handleMakeLeader = (memberId: string) => {
+    const member = team.members?.find(m => m.id === memberId);
+    if (!member) return;
+
+    if (window.confirm(`Deseja tornar ${member.user?.name} o líder da equipe?`)) {
+      const updatedMembers = team.members?.map(m => ({
+        ...m,
+        role: m.id === memberId ? 'leader' : m.role === 'leader' ? 'member' : m.role
+      })) || [];
+      
+      handleUpdateTeam({ 
+        members: updatedMembers,
+        leader: member.user
+      });
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -382,15 +406,15 @@ export default function TeamDetail() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Alterar Função
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleMakeLeader(member.id)}>
                                 <Crown className="mr-2 h-4 w-4" />
-                                Transferir Liderança
+                                Tornar Líder
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleRemoveMember(member.id)}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Remover da Equipe
                               </DropdownMenuItem>
                             </DropdownMenuContent>
