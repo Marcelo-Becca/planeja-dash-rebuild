@@ -482,28 +482,30 @@ export default function ProjectDetail() {
 
                   {/* Project Deadline */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">
+                    <Label className="text-sm font-medium block">
                       Prazo Final
                     </Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full max-w-md justify-start text-left font-normal">
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {project.deadline ? format(new Date(project.deadline), "PPP", {
-                          locale: ptBR
-                        }) : <span>Selecione uma data</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={new Date(project.deadline)} onSelect={date => {
-                        if (date) {
-                          handleUpdateProject({
-                            deadline: date
-                          });
-                        }
-                      }} initialFocus />
-                      </PopoverContent>
-                    </Popover>
+                    <div className="max-w-md">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {project.deadline ? format(new Date(project.deadline), "PPP", {
+                            locale: ptBR
+                          }) : <span>Selecione uma data</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar mode="single" selected={new Date(project.deadline)} onSelect={date => {
+                          if (date) {
+                            handleUpdateProject({
+                              deadline: date
+                            });
+                          }
+                        }} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
 
                   {/* Project Category */}
