@@ -31,6 +31,7 @@ import UserSelector from '@/components/UserSelector';
 import { ProgressSlider } from '@/components/ProgressSlider';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const statusOptions = [
   { value: 'pending', label: 'Pendente', color: 'text-gray-400', bg: 'bg-gray-500/10', icon: Clock },
@@ -51,6 +52,7 @@ export default function TaskDetail() {
   const navigate = useNavigate();
   const { tasks, projects, updateTask, deleteTask, users } = useLocalData();
   const { showUndoToast } = useUndoToast();
+  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [newComment, setNewComment] = useState('');
   const [progress, setProgress] = useState(0);
@@ -165,14 +167,14 @@ export default function TaskDetail() {
   };
 
   const handleAddComment = () => {
-    if (newComment.trim()) {
+    if (newComment.trim() && currentUser) {
       const newCommentObj = {
         id: Date.now().toString(),
         text: newComment.trim(),
-        author: task.createdBy || { 
-          name: 'Usuário', 
-          avatar: 'U',
-          role: 'Membro'
+        author: { 
+          name: currentUser.name, 
+          avatar: currentUser.avatar || currentUser.name.substring(0, 2).toUpperCase(),
+          role: currentUser.role || 'Membro'
         },
         createdAt: new Date()
       };
