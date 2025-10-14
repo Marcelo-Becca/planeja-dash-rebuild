@@ -378,18 +378,8 @@ const Register = () => {
                 <div className="space-y-3">
                   <Label>Preferências de comunicação</Label>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="emailTips" checked={formData.preferences.emailTips} onCheckedChange={checked => handleInputChange('preferences.emailTips', checked as boolean)} />
-                      <Label htmlFor="emailTips" className="text-sm">
-                        Quero receber dicas e novidades (email)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="emailReports" checked={formData.preferences.emailReports} onCheckedChange={checked => handleInputChange('preferences.emailReports', checked as boolean)} />
-                      <Label htmlFor="emailReports" className="text-sm">
-                        Quero relatórios semanais por email
-                      </Label>
-                    </div>
+                    
+                    
                   </div>
                 </div>
 
