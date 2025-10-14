@@ -62,6 +62,12 @@ export default function TaskDetail() {
   ]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
+  const [comments, setComments] = useState<Array<{
+    id: string;
+    text: string;
+    author: { name: string; avatar: string; role: string };
+    createdAt: Date;
+  }>>([]);
 
   const task = tasks.find(t => t.id === id);
   const project = task ? projects.find(p => p.id === task.projectId) : null;
@@ -160,14 +166,39 @@ export default function TaskDetail() {
 
   const handleAddComment = () => {
     if (newComment.trim()) {
-      // This would normally update the task with new comment
-      // For now, just clear the input
+      const newCommentObj = {
+        id: Date.now().toString(),
+        text: newComment.trim(),
+        author: task.createdBy || { 
+          name: 'Usuário', 
+          avatar: 'U',
+          role: 'Membro'
+        },
+        createdAt: new Date()
+      };
+      
+      setComments(prev => [...prev, newCommentObj]);
       setNewComment('');
+      
       showUndoToast('Comentário adicionado', {
         message: 'Seu comentário foi salvo',
-        undo: () => {} // Would need actual implementation
+        undo: () => setComments(prev => prev.filter(c => c.id !== newCommentObj.id))
       });
     }
+  };
+
+  const getRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 1) return 'agora mesmo';
+    if (diffInMinutes < 60) return `há ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
+    if (diffInHours < 24) return `há ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+    if (diffInDays < 7) return `há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`;
+    return date.toLocaleDateString('pt-BR');
   };
 
   const handleDeleteTask = () => {
@@ -514,25 +545,35 @@ export default function TaskDetail() {
 
                   {/* Comments List */}
                   <div className="space-y-4">
-                    {task.comments?.length > 0 ? (
-                      task.comments.map((comment, index) => (
-                        <div key={index} className="p-4 bg-muted/30 rounded-lg">
-                          <div className="flex items-center mb-2">
-                            <Avatar className="w-6 h-6 mr-2">
+                    {comments.length > 0 ? (
+                      comments.map((comment) => (
+                        <div key={comment.id} className="p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="w-8 h-8">
                               <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {task.createdBy?.avatar}
+                                {comment.author.avatar}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm font-medium text-foreground">
-                              {task.createdBy?.name}
-                            </span>
-                            <span className="text-xs text-muted-foreground ml-2">
-                              há 2 dias
-                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium text-foreground">
+                                  {comment.author.name}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {comment.author.role}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  •
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {getRelativeTime(comment.createdAt)}
+                                </span>
+                              </div>
+                              <p className="text-sm text-foreground whitespace-pre-wrap">
+                                {comment.text}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-sm text-muted-foreground ml-8">
-                            {comment}
-                          </p>
                         </div>
                       ))
                     ) : (
