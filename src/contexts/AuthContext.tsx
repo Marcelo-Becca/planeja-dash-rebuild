@@ -24,6 +24,7 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
+  updateProfile: (updates: { name?: string; role?: string; avatar?: string }) => void;
   // Email verification methods (deprecated - kept for dev compatibility)
   verifyEmail: (token?: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
@@ -299,6 +300,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const updateProfile = (updates: { name?: string; role?: string; avatar?: string }) => {
+    if (!user) return;
+    
+    const updatedUser = {
+      ...user,
+      ...(updates.name && { name: updates.name }),
+      ...(updates.role && { role: updates.role }),
+      ...(updates.avatar && { avatar: updates.avatar }),
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+  };
+
   // Deprecated: Email verification removed from public interface
   const resendVerificationEmail = async () => {
     // Legacy compatibility - no-op for dev tools
@@ -320,6 +335,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         resetPassword,
+        updateProfile,
         verifyEmail,
         resendVerificationEmail,
         isEmailVerified,

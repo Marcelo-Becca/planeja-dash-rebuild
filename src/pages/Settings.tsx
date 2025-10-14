@@ -12,7 +12,7 @@ import { User, Lock, Settings as SettingsIcon, Save, Upload } from "lucide-react
 
 export default function Settings() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, updateProfile } = useAuth();
   
   // Profile settings initialized from auth user
   const [profile, setProfile] = useState({
@@ -46,6 +46,12 @@ export default function Settings() {
   }, [user]);
 
   const handleSaveProfile = () => {
+    updateProfile({
+      name: profile.name,
+      role: profile.position,
+      avatar: profile.avatar
+    });
+    
     toast({
       title: "Perfil atualizado",
       description: "Suas informações foram salvas com sucesso.",
