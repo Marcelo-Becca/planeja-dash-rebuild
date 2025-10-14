@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { InvitationModal } from './InvitationModal';
 import { InvitationTarget, InvitationRole } from '@/types/invitation';
 import { User, Team } from '@/data/mockData';
-
 interface InvitationButtonProps {
   target: InvitationTarget;
   currentUser: User;
@@ -15,7 +14,6 @@ interface InvitationButtonProps {
   className?: string;
   children?: React.ReactNode;
 }
-
 export function InvitationButton({
   target,
   currentUser,
@@ -30,35 +28,12 @@ export function InvitationButton({
 
   // Check if user can invite (simplified - in real app would check actual permissions)
   const canInvite = ['owner', 'admin'].includes(currentUserRole);
-
   if (!canInvite) {
     return null;
   }
+  return <>
+      
 
-  return (
-    <>
-      <Button
-        variant={variant}
-        size={size}
-        className={className}
-        onClick={() => setIsModalOpen(true)}
-      >
-        {children || (
-          <>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Convidar membro
-          </>
-        )}
-      </Button>
-
-      <InvitationModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        target={target}
-        currentUser={currentUser}
-        currentUserRole={currentUserRole}
-        availableTeams={availableTeams}
-      />
-    </>
-  );
+      <InvitationModal open={isModalOpen} onOpenChange={setIsModalOpen} target={target} currentUser={currentUser} currentUserRole={currentUserRole} availableTeams={availableTeams} />
+    </>;
 }
