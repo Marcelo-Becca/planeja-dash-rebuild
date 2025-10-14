@@ -11,7 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { validateEmailSecurity, validatePasswordSecurity, checkAccountSecurityFlags, generateSecurityReport } from '@/utils/security';
 import DevPanel from '@/components/DevPanel';
-
 interface FormData {
   name: string;
   displayName: string;
@@ -28,16 +27,16 @@ interface FormData {
     newsletter: boolean;
   };
 }
-
 const Register = () => {
   const navigate = useNavigate();
-  const { register, isLoading } = useAuth();
-  
+  const {
+    register,
+    isLoading
+  } = useAuth();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
   const [formData, setFormData] = useState<FormData>({
     name: '',
     displayName: '',
@@ -51,10 +50,9 @@ const Register = () => {
     preferences: {
       emailTips: true,
       emailReports: false,
-      newsletter: false,
-    },
+      newsletter: false
+    }
   });
-  
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Validações
@@ -65,12 +63,10 @@ const Register = () => {
     if (words.length < 2) return 'Digite pelo menos nome e sobrenome';
     return '';
   };
-
   const validateEmail = (email: string) => {
     const validation = validateEmailSecurity(email);
     return validation.isValid ? '' : validation.reason || 'Email inválido';
   };
-
   const validatePassword = (password: string) => {
     const validation = validatePasswordSecurity(password);
     if (!validation.isValid && validation.issues.length > 0) {
@@ -78,101 +74,91 @@ const Register = () => {
     }
     return '';
   };
-
   const getPasswordStrength = (password: string) => {
     const validation = validatePasswordSecurity(password);
-    
     let color = 'bg-destructive';
-    if (validation.strength === 'medium') color = 'bg-amber-500';
-    else if (validation.strength === 'strong') color = 'bg-green-500';
-    else if (validation.strength === 'very_strong') color = 'bg-emerald-600';
-    
-    return { 
-      strength: validation.strength === 'weak' ? 'fraca' : 
-                validation.strength === 'medium' ? 'média' : 
-                validation.strength === 'strong' ? 'forte' : 'muito forte',
-      color, 
-      score: validation.score 
+    if (validation.strength === 'medium') color = 'bg-amber-500';else if (validation.strength === 'strong') color = 'bg-green-500';else if (validation.strength === 'very_strong') color = 'bg-emerald-600';
+    return {
+      strength: validation.strength === 'weak' ? 'fraca' : validation.strength === 'medium' ? 'média' : validation.strength === 'strong' ? 'forte' : 'muito forte',
+      color,
+      score: validation.score
     };
   };
-
   const validateConfirmPassword = (confirmPassword: string) => {
     if (!confirmPassword) return 'Confirmação de senha é obrigatória';
     if (confirmPassword !== formData.password) return 'Senhas não coincidem';
     return '';
   };
-
   const validatePhone = (phone: string) => {
     if (phone && !/^\(\d{2}\)\s\d{4,5}-\d{4}$/.test(phone)) {
       return 'Formato inválido. Use: (11) 99999-9999';
     }
     return '';
   };
-
   const handleInputChange = (field: keyof FormData | string, value: string | boolean) => {
     if (field.startsWith('preferences.')) {
       const prefKey = field.split('.')[1] as keyof FormData['preferences'];
       setFormData(prev => ({
         ...prev,
-        preferences: { ...prev.preferences, [prefKey]: value }
+        preferences: {
+          ...prev.preferences,
+          [prefKey]: value
+        }
       }));
     } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
     }
-    
+
     // Limpar erro do campo
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
     }
   };
-
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 11) {
-      return numbers
-        .replace(/(\d{2})(\d)/, '($1) $2')
-        .replace(/(\d{4,5})(\d{4})$/, '$1-$2');
+      return numbers.replace(/(\d{2})(\d)/, '($1) $2').replace(/(\d{4,5})(\d{4})$/, '$1-$2');
     }
     return value;
   };
-
   const canProceedToStep2 = () => {
     const nameError = validateName(formData.name);
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
     const confirmPasswordError = validateConfirmPassword(formData.confirmPassword);
-    
     return !nameError && !emailError && !passwordError && !confirmPasswordError;
   };
-
   const handleNextStep = () => {
     const nameError = validateName(formData.name);
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
     const confirmPasswordError = validateConfirmPassword(formData.confirmPassword);
-    
     setErrors({
       name: nameError,
       email: emailError,
       password: passwordError,
-      confirmPassword: confirmPasswordError,
+      confirmPassword: confirmPasswordError
     });
-    
     if (canProceedToStep2()) {
       setStep(2);
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.acceptTerms) {
-      setErrors(prev => ({ ...prev, acceptTerms: 'Você deve aceitar os termos para continuar' }));
+      setErrors(prev => ({
+        ...prev,
+        acceptTerms: 'Você deve aceitar os termos para continuar'
+      }));
       return;
     }
-
     setIsSubmitting(true);
-    
     try {
       await register({
         name: formData.name,
@@ -182,9 +168,9 @@ const Register = () => {
         phone: formData.phone || undefined,
         role: formData.role || undefined,
         company: formData.company || undefined,
-        preferences: formData.preferences,
+        preferences: formData.preferences
       });
-      
+
       // Redirect to dashboard after successful registration
       navigate('/dashboard');
     } catch (error) {
@@ -203,18 +189,14 @@ const Register = () => {
         email: event.detail.email,
         password: event.detail.password,
         confirmPassword: event.detail.confirmPassword,
-        acceptTerms: true,
+        acceptTerms: true
       }));
     };
-
     window.addEventListener('devQuickFillRegister', handleDevQuickFill as EventListener);
     return () => window.removeEventListener('devQuickFillRegister', handleDevQuickFill as EventListener);
   }, []);
-
   const passwordStrength = getPasswordStrength(formData.password);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
       <div className="w-full max-w-lg space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -232,8 +214,7 @@ const Register = () => {
         </div>
 
         <Card className="shadow-card-hover transition-all duration-300">
-          {step === 1 && (
-            <>
+          {step === 1 && <>
               <CardHeader className="pb-6">
                 {/* Dev mode indicator removed from public interface */}
               </CardHeader>
@@ -245,20 +226,10 @@ const Register = () => {
                     <Label htmlFor="name">Nome completo *</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="name"
-                        placeholder="Ex.: João Silva"
-                        value={formData.name}
-                        onChange={(e) => handleInputChange('name', e.target.value)}
-                        className={cn("pl-10", errors.name && "border-destructive")}
-                      />
-                      {formData.name && !errors.name && (
-                        <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
-                      )}
+                      <Input id="name" placeholder="Ex.: João Silva" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className={cn("pl-10", errors.name && "border-destructive")} />
+                      {formData.name && !errors.name && <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />}
                     </div>
-                    {errors.name && (
-                      <p className="text-sm text-destructive animate-fade-in">{errors.name}</p>
-                    )}
+                    {errors.name && <p className="text-sm text-destructive animate-fade-in">{errors.name}</p>}
                   </div>
 
                   {/* Email */}
@@ -266,21 +237,10 @@ const Register = () => {
                     <Label htmlFor="email">E-mail *</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="seu@email.com"
-                        value={formData.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        className={cn("pl-10", errors.email && "border-destructive")}
-                      />
-                      {formData.email && !errors.email && (
-                        <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />
-                      )}
+                      <Input id="email" type="email" placeholder="seu@email.com" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} className={cn("pl-10", errors.email && "border-destructive")} />
+                      {formData.email && !errors.email && <Check className="absolute right-3 top-3 h-4 w-4 text-green-500" />}
                     </div>
-                    {errors.email && (
-                      <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
-                    )}
+                    {errors.email && <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>}
                   </div>
 
                   {/* Password */}
@@ -288,32 +248,19 @@ const Register = () => {
                     <Label htmlFor="password">Senha *</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Mínimo 8 caracteres"
-                        value={formData.password}
-                        onChange={(e) => handleInputChange('password', e.target.value)}
-                        className={cn("pl-10 pr-10", errors.password && "border-destructive")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                      >
+                      <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Mínimo 8 caracteres" value={formData.password} onChange={e => handleInputChange('password', e.target.value)} className={cn("pl-10 pr-10", errors.password && "border-destructive")} />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors">
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                     
                     {/* Password Strength */}
-                    {formData.password && (
-                      <div className="space-y-2">
+                    {formData.password && <div className="space-y-2">
                         <div className="flex items-center space-x-2">
                           <div className="flex-1 bg-muted h-2 rounded-full overflow-hidden">
-                            <div 
-                              className={cn("h-full transition-all duration-300", passwordStrength.color)}
-                              style={{ width: `${passwordStrength.score}%` }}
-                            />
+                            <div className={cn("h-full transition-all duration-300", passwordStrength.color)} style={{
+                        width: `${passwordStrength.score}%`
+                      }} />
                           </div>
                           <span className="text-xs text-muted-foreground">
                             Força: {passwordStrength.strength}
@@ -343,12 +290,9 @@ const Register = () => {
                             <span>Símbolo</span>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      </div>}
                     
-                    {errors.password && (
-                      <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
-                    )}
+                    {errors.password && <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>}
                   </div>
 
                   {/* Confirm Password */}
@@ -356,37 +300,16 @@ const Register = () => {
                     <Label htmlFor="confirmPassword">Confirmar senha *</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        placeholder="Digite a senha novamente"
-                        value={formData.confirmPassword}
-                        onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                        className={cn("pl-10 pr-10", errors.confirmPassword && "border-destructive")}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                      >
+                      <Input id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} placeholder="Digite a senha novamente" value={formData.confirmPassword} onChange={e => handleInputChange('confirmPassword', e.target.value)} className={cn("pl-10 pr-10", errors.confirmPassword && "border-destructive")} />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors">
                         {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
-                      {formData.confirmPassword && formData.password === formData.confirmPassword && (
-                        <Check className="absolute right-10 top-3 h-4 w-4 text-green-500" />
-                      )}
+                      {formData.confirmPassword && formData.password === formData.confirmPassword && <Check className="absolute right-10 top-3 h-4 w-4 text-green-500" />}
                     </div>
-                    {errors.confirmPassword && (
-                      <p className="text-sm text-destructive animate-fade-in">{errors.confirmPassword}</p>
-                    )}
+                    {errors.confirmPassword && <p className="text-sm text-destructive animate-fade-in">{errors.confirmPassword}</p>}
                   </div>
 
-                  <Button
-                    type="button"
-                    onClick={handleNextStep}
-                    size="lg"
-                    className="w-full"
-                    disabled={!canProceedToStep2()}
-                  >
+                  <Button type="button" onClick={handleNextStep} size="lg" className="w-full" disabled={!canProceedToStep2()}>
                     Próximo passo
                   </Button>
                 </form>
@@ -404,11 +327,9 @@ const Register = () => {
                   </Link>
                 </p>
               </CardContent>
-            </>
-          )}
+            </>}
 
-          {step === 2 && (
-            <CardContent>
+          {step === 2 && <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="text-center mb-6">
                   <h3 className="text-lg font-semibold">Informações adicionais</h3>
@@ -420,13 +341,7 @@ const Register = () => {
                   <Label htmlFor="displayName">Nome de exibição</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="displayName"
-                      placeholder="Como você gostaria de ser chamado?"
-                      value={formData.displayName}
-                      onChange={(e) => handleInputChange('displayName', e.target.value)}
-                      className="pl-10"
-                    />
+                    <Input id="displayName" placeholder="Como você gostaria de ser chamado?" value={formData.displayName} onChange={e => handleInputChange('displayName', e.target.value)} className="pl-10" />
                   </div>
                   <p className="text-xs text-muted-foreground">Usado em comentários e menções</p>
                 </div>
@@ -436,13 +351,7 @@ const Register = () => {
                   <Label htmlFor="role">Cargo / Função</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="role"
-                      placeholder="Ex.: Product Manager"
-                      value={formData.role}
-                      onChange={(e) => handleInputChange('role', e.target.value)}
-                      className="pl-10"
-                    />
+                    <Input id="role" placeholder="Ex.: Product Manager" value={formData.role} onChange={e => handleInputChange('role', e.target.value)} className="pl-10" />
                   </div>
                 </div>
 
@@ -451,13 +360,7 @@ const Register = () => {
                   <Label htmlFor="company">Nome da empresa / organização</Label>
                   <div className="relative">
                     <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="company"
-                      placeholder="Ex.: Padaria do Bairro (MEI)"
-                      value={formData.company}
-                      onChange={(e) => handleInputChange('company', e.target.value)}
-                      className="pl-10"
-                    />
+                    <Input id="company" placeholder="Ex.: Padaria do Bairro (MEI)" value={formData.company} onChange={e => handleInputChange('company', e.target.value)} className="pl-10" />
                   </div>
                 </div>
 
@@ -466,17 +369,9 @@ const Register = () => {
                   <Label htmlFor="phone">Telefone</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      placeholder="(11) 99999-9999"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', formatPhone(e.target.value))}
-                      className={cn("pl-10", errors.phone && "border-destructive")}
-                    />
+                    <Input id="phone" placeholder="(11) 99999-9999" value={formData.phone} onChange={e => handleInputChange('phone', formatPhone(e.target.value))} className={cn("pl-10", errors.phone && "border-destructive")} />
                   </div>
-                  {errors.phone && (
-                    <p className="text-sm text-destructive animate-fade-in">{errors.phone}</p>
-                  )}
+                  {errors.phone && <p className="text-sm text-destructive animate-fade-in">{errors.phone}</p>}
                   <p className="text-xs text-muted-foreground">Apenas se quiser adicionar contato</p>
                 </div>
                 {/* Preferences */}
@@ -484,21 +379,13 @@ const Register = () => {
                   <Label>Preferências de comunicação</Label>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="emailTips"
-                        checked={formData.preferences.emailTips}
-                        onCheckedChange={(checked) => handleInputChange('preferences.emailTips', checked as boolean)}
-                      />
+                      <Checkbox id="emailTips" checked={formData.preferences.emailTips} onCheckedChange={checked => handleInputChange('preferences.emailTips', checked as boolean)} />
                       <Label htmlFor="emailTips" className="text-sm">
                         Quero receber dicas e novidades (email)
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="emailReports"
-                        checked={formData.preferences.emailReports}
-                        onCheckedChange={(checked) => handleInputChange('preferences.emailReports', checked as boolean)}
-                      />
+                      <Checkbox id="emailReports" checked={formData.preferences.emailReports} onCheckedChange={checked => handleInputChange('preferences.emailReports', checked as boolean)} />
                       <Label htmlFor="emailReports" className="text-sm">
                         Quero relatórios semanais por email
                       </Label>
@@ -509,11 +396,7 @@ const Register = () => {
                 {/* Terms */}
                 <div className="space-y-2">
                   <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="acceptTerms"
-                      checked={formData.acceptTerms}
-                      onCheckedChange={(checked) => handleInputChange('acceptTerms', checked as boolean)}
-                    />
+                    <Checkbox id="acceptTerms" checked={formData.acceptTerms} onCheckedChange={checked => handleInputChange('acceptTerms', checked as boolean)} />
                     <Label htmlFor="acceptTerms" className="text-sm">
                       Aceito os{' '}
                       <Link to="/terms" className="text-primary hover:text-primary/80 underline">
@@ -525,76 +408,32 @@ const Register = () => {
                       </Link>
                     </Label>
                   </div>
-                  {errors.acceptTerms && (
-                    <p className="text-sm text-destructive animate-fade-in">{errors.acceptTerms}</p>
-                  )}
+                  {errors.acceptTerms && <p className="text-sm text-destructive animate-fade-in">{errors.acceptTerms}</p>}
                 </div>
 
                 <div className="flex space-x-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setStep(1)}
-                    className="flex-1"
-                  >
+                  <Button type="button" variant="outline" onClick={() => setStep(1)} className="flex-1">
                     Voltar
                   </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1"
-                    disabled={isSubmitting || isLoading || !formData.acceptTerms}
-                  >
-                    {isSubmitting || isLoading ? (
-                      <>
+                  <Button type="submit" className="flex-1" disabled={isSubmitting || isLoading || !formData.acceptTerms}>
+                    {isSubmitting || isLoading ? <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Criando conta...
-                      </>
-                    ) : (
-                      'Criar conta'
-                    )}
+                      </> : 'Criar conta'}
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          )}
+            </CardContent>}
         </Card>
 
         {/* Quick Account Option */}
-        {step === 1 && (
-          <Card className="border-dashed border-2 border-primary/20">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-2">
-                <h4 className="font-medium">Criar conta rápida</h4>
-                <p className="text-sm text-muted-foreground">
-                  Apenas Nome + E-mail + aceitar termos. Complete o perfil depois.
-                </p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      name: 'Maria Silva',
-                      email: 'maria.demo@planeja.com',
-                      password: 'MinhaSenh@123',
-                      confirmPassword: 'MinhaSenh@123',
-                      acceptTerms: true,
-                    }));
-                    setStep(2);
-                  }}
-                >
-                  Criar conta rápida
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {step === 1 && <Card className="border-dashed border-2 border-primary/20">
+            
+          </Card>}
 
         {/* Dev Panel */}
         <DevPanel />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Register;
