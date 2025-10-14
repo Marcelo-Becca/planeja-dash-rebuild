@@ -60,10 +60,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapsed }: SidebarProps
 
   return (
     <aside className={cn(
-      "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 relative z-20",
-      isCollapsed ? "w-16 md:w-16" : "w-64 md:w-64",
-      // Mobile overlay when expanded
-      !isCollapsed && "md:relative fixed inset-y-0 left-0"
+      "h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 z-20 fixed inset-y-0 left-0",
+      isCollapsed ? "w-16" : "w-64"
     )}>
       {/* Header with brand and toggle */}
       <div className="p-4 border-b border-sidebar-border">
