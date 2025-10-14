@@ -60,6 +60,8 @@ export default function TaskDetail() {
     { id: '3', text: 'Testes', completed: false },
     { id: '4', text: 'Deploy', completed: false }
   ]);
+  const [newSubtaskText, setNewSubtaskText] = useState('');
+  const [showSubtaskInput, setShowSubtaskInput] = useState(false);
 
   const task = tasks.find(t => t.id === id);
   const project = task ? projects.find(p => p.id === task.projectId) : null;
@@ -137,6 +139,23 @@ export default function TaskDetail() {
     setSubtasks(prev => prev.map(st => 
       st.id === subtaskId ? { ...st, completed: !st.completed } : st
     ));
+  };
+
+  const handleAddSubtask = () => {
+    if (newSubtaskText.trim()) {
+      const newSubtask = {
+        id: Date.now().toString(),
+        text: newSubtaskText.trim(),
+        completed: false
+      };
+      setSubtasks(prev => [...prev, newSubtask]);
+      setNewSubtaskText('');
+      setShowSubtaskInput(false);
+      showUndoToast('Subtarefa adicionada', {
+        message: 'A subtarefa foi criada com sucesso',
+        undo: () => setSubtasks(prev => prev.filter(st => st.id !== newSubtask.id))
+      });
+    }
   };
 
   const handleAddComment = () => {
@@ -377,7 +396,11 @@ export default function TaskDetail() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Subtarefas</CardTitle>
-                    <Button size="sm" className="gap-2">
+                    <Button 
+                      size="sm" 
+                      className="gap-2"
+                      onClick={() => setShowSubtaskInput(true)}
+                    >
                       <Plus className="w-4 h-4" />
                       Nova Subtarefa
                     </Button>
@@ -385,6 +408,47 @@ export default function TaskDetail() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
+                    {showSubtaskInput && (
+                      <div className="flex gap-2 p-3 bg-muted/30 rounded-lg">
+                        <Textarea
+                          value={newSubtaskText}
+                          onChange={(e) => setNewSubtaskText(e.target.value)}
+                          placeholder="Descreva a subtarefa..."
+                          className="flex-1 min-h-[60px]"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleAddSubtask();
+                            }
+                            if (e.key === 'Escape') {
+                              setShowSubtaskInput(false);
+                              setNewSubtaskText('');
+                            }
+                          }}
+                        />
+                        <div className="flex flex-col gap-2">
+                          <Button 
+                            size="sm" 
+                            onClick={handleAddSubtask}
+                            disabled={!newSubtaskText.trim()}
+                          >
+                            Adicionar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setShowSubtaskInput(false);
+                              setNewSubtaskText('');
+                            }}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
                     {subtasks.map((subtask) => (
                       <div key={subtask.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
                         <Checkbox
@@ -401,13 +465,16 @@ export default function TaskDetail() {
                     ))}
                   </div>
                   
-                  {subtasks.length === 0 && (
+                  {subtasks.length === 0 && !showSubtaskInput && (
                     <div className="text-center py-8">
                       <CheckCircle2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                       <p className="text-muted-foreground mb-4">
                         Nenhuma subtarefa criada ainda
                       </p>
-                      <Button size="sm">
+                      <Button 
+                        size="sm"
+                        onClick={() => setShowSubtaskInput(true)}
+                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Criar Primeira Subtarefa
                       </Button>
