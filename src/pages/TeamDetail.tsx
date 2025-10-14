@@ -114,14 +114,6 @@ export default function TeamDetail() {
     }
   };
 
-  const handleAddMember = () => {
-    // This would open a modal to select and add a new member
-    showUndoToast('Membro adicionado', {
-      message: 'Novo membro foi adicionado à equipe',
-      undo: () => {} // Would need actual implementation
-    });
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -204,14 +196,6 @@ export default function TeamDetail() {
                 variant="outline"
                 size="sm"
               />
-              <Button variant="outline" size="sm" className="gap-2">
-                <Edit className="w-4 h-4" />
-                Editar Equipe
-              </Button>
-              <Button onClick={handleAddMember} size="sm" className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                Adicionar Membro
-              </Button>
             </div>
           </div>
         </div>
@@ -349,13 +333,7 @@ export default function TeamDetail() {
             <TabsContent value="members" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Membros da Equipe ({team.members?.length || 0})</CardTitle>
-                    <Button size="sm" onClick={handleAddMember} className="gap-2">
-                      <UserPlus className="w-4 h-4" />
-                      Adicionar Membro
-                    </Button>
-                  </div>
+                  <CardTitle>Membros da Equipe ({team.members?.length || 0})</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -422,13 +400,9 @@ export default function TeamDetail() {
                     )) || (
                       <div className="text-center py-8">
                         <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                        <p className="text-muted-foreground mb-4">
+                        <p className="text-muted-foreground">
                           Nenhum membro na equipe ainda
                         </p>
-                        <Button onClick={handleAddMember}>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Adicionar Primeiro Membro
-                        </Button>
                       </div>
                     )}
                   </div>
