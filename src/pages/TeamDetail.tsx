@@ -35,7 +35,7 @@ import { useLocalData } from '@/hooks/useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
-import UserSelector from '@/components/UserSelector';
+import MultiUserSelector from '@/components/MultiUserSelector';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +52,7 @@ export default function TeamDetail() {
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedNewMembers, setSelectedNewMembers] = useState<string[]>([]);
 
   const team = teams.find(t => t.id === id);
   
@@ -134,6 +135,33 @@ export default function TeamDetail() {
       handleUpdateTeam({ 
         members: updatedMembers,
         leader: member.user
+      });
+    }
+  };
+
+  const handleAddMembers = () => {
+    if (selectedNewMembers.length === 0) return;
+
+    const currentMembers = team.members || [];
+    const newMembers = selectedNewMembers
+      .filter(userId => !currentMembers.some(m => m.user?.id === userId))
+      .map(userId => {
+        const user = users.find(u => u.id === userId);
+        return {
+          id: `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          user: user,
+          role: 'member' as const,
+          joinedAt: new Date(),
+          tasksCount: 0
+        };
+      });
+
+    if (newMembers.length > 0) {
+      handleUpdateTeam({ members: [...currentMembers, ...newMembers] });
+      setSelectedNewMembers([]);
+      showUndoToast('Membros adicionados', {
+        message: `${newMembers.length} membro${newMembers.length > 1 ? 's' : ''} adicionado${newMembers.length > 1 ? 's' : ''} à equipe`,
+        undo: () => handleUpdateTeam({ members: currentMembers })
       });
     }
   };
@@ -356,8 +384,26 @@ export default function TeamDetail() {
 
             <TabsContent value="members" className="space-y-6">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-col space-y-4">
                   <CardTitle>Membros da Equipe ({team.members?.length || 0})</CardTitle>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1">
+                      <MultiUserSelector
+                        selectedUsers={selectedNewMembers}
+                        onSelectionChange={setSelectedNewMembers}
+                        placeholder="Selecionar membros para adicionar..."
+                        className="w-full"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleAddMembers}
+                      disabled={selectedNewMembers.length === 0}
+                      className="gap-2"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Adicionar {selectedNewMembers.length > 0 && `(${selectedNewMembers.length})`}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
