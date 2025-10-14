@@ -375,8 +375,8 @@ const Register = () => {
                   <p className="text-xs text-muted-foreground">Apenas se quiser adicionar contato</p>
                 </div>
                 {/* Preferences */}
-                <div className="space-y-3">
-                  <Label>Preferências de comunicação</Label>
+                <div className="space-y-3 py-0">
+                  <Label>Termos e Condições</Label>
                   <div className="space-y-2">
                     
                     
