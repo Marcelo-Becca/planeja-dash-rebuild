@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          color: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          end_date: string
+          id: string
+          location: string | null
+          priority: string
+          project_id: string | null
+          start_date: string
+          status: string
+          task_id: string | null
+          team_id: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          color?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          end_date: string
+          id?: string
+          location?: string | null
+          priority?: string
+          project_id?: string | null
+          start_date: string
+          status?: string
+          task_id?: string | null
+          team_id?: string | null
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          color?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          location?: string | null
+          priority?: string
+          project_id?: string | null
+          start_date?: string
+          status?: string
+          task_id?: string | null
+          team_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      calendar_participants: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      calendar_reminders: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          minutes: number
+          triggered: boolean
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          minutes: number
+          triggered?: boolean
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          minutes?: number
+          triggered?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null

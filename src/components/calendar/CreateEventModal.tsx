@@ -134,10 +134,10 @@ export function CreateEventModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    onSave({
+    await onSave({
       ...formData,
       projectId: formData.projectId === 'none' ? '' : formData.projectId,
       teamId: formData.teamId === 'none' ? '' : formData.teamId,

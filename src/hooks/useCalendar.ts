@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CalendarEvent, CalendarView, CalendarFilters, CalendarState } from '@/types/calendar';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-
-const CALENDAR_STORAGE_KEY = 'planeja_calendar_events';
+import { supabase } from '@/integrations/supabase/client';
 
 const defaultFilters: CalendarFilters = {
   projects: [],
@@ -29,97 +28,329 @@ export function useCalendar() {
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // Load events from localStorage
-  useEffect(() => {
-    if (!user) return;
-    
-    const stored = localStorage.getItem(`${CALENDAR_STORAGE_KEY}_${user.id}`);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        const eventsWithDates = parsed.map((event: any) => ({
-          ...event,
-          startDate: new Date(event.startDate),
-          endDate: new Date(event.endDate),
-          createdAt: new Date(event.createdAt),
-          updatedAt: new Date(event.updatedAt),
-        }));
-        setEvents(eventsWithDates);
-      } catch (error) {
-        console.error('Error loading calendar events:', error);
-      }
-    }
-  }, [user]);
-
-  // Save events to localStorage
-  const saveEvents = useCallback((eventList: CalendarEvent[]) => {
+  // Load events from Supabase
+  const fetchEvents = useCallback(async () => {
     if (!user) return;
     
     try {
-      localStorage.setItem(`${CALENDAR_STORAGE_KEY}_${user.id}`, JSON.stringify(eventList));
-    } catch (error) {
-      console.error('Error saving calendar events:', error);
+      setLoading(true);
+
+      // Fetch events
+      const { data: eventsData, error: eventsError } = await supabase
+        .from('calendar_events')
+        .select('*')
+        .order('start_date', { ascending: true });
+
+      if (eventsError) throw eventsError;
+
+      // Fetch participants for all events
+      const eventIds = eventsData?.map(e => e.id) || [];
+      const { data: participantsData, error: participantsError } = await supabase
+        .from('calendar_participants')
+        .select('event_id, user_id')
+        .in('event_id', eventIds);
+
+      if (participantsError) throw participantsError;
+
+      // Fetch reminders for all events
+      const { data: remindersData, error: remindersError } = await supabase
+        .from('calendar_reminders')
+        .select('*')
+        .in('event_id', eventIds);
+
+      if (remindersError) throw remindersError;
+
+      // Combine data
+      const formattedEvents: CalendarEvent[] = (eventsData || []).map(event => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || undefined,
+        startDate: new Date(event.start_date),
+        endDate: new Date(event.end_date),
+        allDay: event.all_day,
+        type: event.type as CalendarEvent['type'],
+        location: event.location || undefined,
+        participants: participantsData?.filter(p => p.event_id === event.id).map(p => p.user_id) || [],
+        projectId: event.project_id || undefined,
+        teamId: event.team_id || undefined,
+        taskId: event.task_id || undefined,
+        priority: event.priority as CalendarEvent['priority'],
+        reminders: remindersData?.filter(r => r.event_id === event.id).map(r => ({
+          id: r.id,
+          minutes: r.minutes,
+          triggered: r.triggered
+        })) || [],
+        color: event.color || undefined,
+        status: event.status as CalendarEvent['status'],
+        createdBy: event.created_by,
+        createdAt: new Date(event.created_at),
+        updatedAt: new Date(event.updated_at),
+      }));
+
+      setEvents(formattedEvents);
+    } catch (error: any) {
+      console.error('Error fetching calendar events:', error);
+      toast({
+        title: 'Erro ao carregar eventos',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
   }, [user]);
 
+  // Load events on mount and subscribe to changes
+  useEffect(() => {
+    fetchEvents();
+
+    // Subscribe to real-time changes
+    const eventsChannel = supabase
+      .channel('calendar-events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'calendar_events'
+        },
+        () => {
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    const participantsChannel = supabase
+      .channel('calendar-participants-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'calendar_participants'
+        },
+        () => {
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    const remindersChannel = supabase
+      .channel('calendar-reminders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'calendar_reminders'
+        },
+        () => {
+          fetchEvents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(eventsChannel);
+      supabase.removeChannel(participantsChannel);
+      supabase.removeChannel(remindersChannel);
+    };
+  }, [fetchEvents]);
+
   // Event CRUD operations
-  const createEvent = useCallback((eventData: Omit<CalendarEvent, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
+  const createEvent = useCallback(async (eventData: Omit<CalendarEvent, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return null;
 
-    const newEvent: CalendarEvent = {
-      ...eventData,
-      id: crypto.randomUUID(),
-      createdBy: user.id,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    try {
+      // Insert event
+      const { data: event, error: eventError } = await supabase
+        .from('calendar_events')
+        .insert({
+          title: eventData.title,
+          description: eventData.description,
+          start_date: eventData.startDate.toISOString(),
+          end_date: eventData.endDate.toISOString(),
+          all_day: eventData.allDay,
+          type: eventData.type,
+          location: eventData.location,
+          project_id: eventData.projectId,
+          team_id: eventData.teamId,
+          task_id: eventData.taskId,
+          priority: eventData.priority,
+          color: eventData.color,
+          status: eventData.status,
+          created_by: user.id,
+        })
+        .select()
+        .single();
 
-    const updatedEvents = [...events, newEvent];
-    setEvents(updatedEvents);
-    saveEvents(updatedEvents);
+      if (eventError) throw eventError;
 
-    toast({
-      title: 'Evento criado',
-      description: `"${newEvent.title}" foi adicionado ao calendário`,
-    });
+      // Insert participants
+      if (eventData.participants.length > 0) {
+        const participantsToInsert = eventData.participants.map(userId => ({
+          event_id: event.id,
+          user_id: userId,
+        }));
 
-    return newEvent;
-  }, [events, saveEvents, user]);
+        const { error: participantsError } = await supabase
+          .from('calendar_participants')
+          .insert(participantsToInsert);
 
-  const updateEvent = useCallback((eventId: string, updates: Partial<CalendarEvent>) => {
-    const updatedEvents = events.map(event =>
-      event.id === eventId
-        ? { ...event, ...updates, updatedAt: new Date() }
-        : event
-    );
-    
-    setEvents(updatedEvents);
-    saveEvents(updatedEvents);
+        if (participantsError) throw participantsError;
+      }
 
-    const updatedEvent = updatedEvents.find(e => e.id === eventId);
-    if (updatedEvent) {
+      // Insert reminders
+      if (eventData.reminders.length > 0) {
+        const remindersToInsert = eventData.reminders.map(reminder => ({
+          event_id: event.id,
+          minutes: reminder.minutes,
+          triggered: false,
+        }));
+
+        const { error: remindersError } = await supabase
+          .from('calendar_reminders')
+          .insert(remindersToInsert);
+
+        if (remindersError) throw remindersError;
+      }
+
+      toast({
+        title: 'Evento criado',
+        description: `"${event.title}" foi adicionado ao calendário`,
+      });
+
+      await fetchEvents();
+      return event;
+    } catch (error: any) {
+      console.error('Error creating event:', error);
+      toast({
+        title: 'Erro ao criar evento',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return null;
+    }
+  }, [user, fetchEvents]);
+
+  const updateEvent = useCallback(async (eventId: string, updates: Partial<CalendarEvent>) => {
+    try {
+      // Update event
+      const eventUpdates: any = {};
+      if (updates.title !== undefined) eventUpdates.title = updates.title;
+      if (updates.description !== undefined) eventUpdates.description = updates.description;
+      if (updates.startDate !== undefined) eventUpdates.start_date = updates.startDate.toISOString();
+      if (updates.endDate !== undefined) eventUpdates.end_date = updates.endDate.toISOString();
+      if (updates.allDay !== undefined) eventUpdates.all_day = updates.allDay;
+      if (updates.type !== undefined) eventUpdates.type = updates.type;
+      if (updates.location !== undefined) eventUpdates.location = updates.location;
+      if (updates.projectId !== undefined) eventUpdates.project_id = updates.projectId;
+      if (updates.teamId !== undefined) eventUpdates.team_id = updates.teamId;
+      if (updates.taskId !== undefined) eventUpdates.task_id = updates.taskId;
+      if (updates.priority !== undefined) eventUpdates.priority = updates.priority;
+      if (updates.color !== undefined) eventUpdates.color = updates.color;
+      if (updates.status !== undefined) eventUpdates.status = updates.status;
+
+      const { error: eventError } = await supabase
+        .from('calendar_events')
+        .update(eventUpdates)
+        .eq('id', eventId);
+
+      if (eventError) throw eventError;
+
+      // Update participants if provided
+      if (updates.participants !== undefined) {
+        // Delete existing participants
+        const { error: deleteError } = await supabase
+          .from('calendar_participants')
+          .delete()
+          .eq('event_id', eventId);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new participants
+        if (updates.participants.length > 0) {
+          const participantsToInsert = updates.participants.map(userId => ({
+            event_id: eventId,
+            user_id: userId,
+          }));
+
+          const { error: insertError } = await supabase
+            .from('calendar_participants')
+            .insert(participantsToInsert);
+
+          if (insertError) throw insertError;
+        }
+      }
+
+      // Update reminders if provided
+      if (updates.reminders !== undefined) {
+        // Delete existing reminders
+        const { error: deleteError } = await supabase
+          .from('calendar_reminders')
+          .delete()
+          .eq('event_id', eventId);
+
+        if (deleteError) throw deleteError;
+
+        // Insert new reminders
+        if (updates.reminders.length > 0) {
+          const remindersToInsert = updates.reminders.map(reminder => ({
+            event_id: eventId,
+            minutes: reminder.minutes,
+            triggered: reminder.triggered || false,
+          }));
+
+          const { error: insertError } = await supabase
+            .from('calendar_reminders')
+            .insert(remindersToInsert);
+
+          if (insertError) throw insertError;
+        }
+      }
+
       toast({
         title: 'Evento atualizado',
-        description: `"${updatedEvent.title}" foi modificado`,
+        description: 'As alterações foram salvas com sucesso',
+      });
+
+      await fetchEvents();
+    } catch (error: any) {
+      console.error('Error updating event:', error);
+      toast({
+        title: 'Erro ao atualizar evento',
+        description: error.message,
+        variant: 'destructive',
       });
     }
-  }, [events, saveEvents]);
+  }, [fetchEvents]);
 
-  const deleteEvent = useCallback((eventId: string) => {
-    const eventToDelete = events.find(e => e.id === eventId);
-    const updatedEvents = events.filter(event => event.id !== eventId);
-    
-    setEvents(updatedEvents);
-    saveEvents(updatedEvents);
+  const deleteEvent = useCallback(async (eventId: string) => {
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('id', eventId);
 
-    if (eventToDelete) {
+      if (error) throw error;
+
       toast({
         title: 'Evento excluído',
-        description: `"${eventToDelete.title}" foi removido do calendário`,
+        description: 'O evento foi removido do calendário',
+      });
+
+      await fetchEvents();
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: 'Erro ao excluir evento',
+        description: error.message,
+        variant: 'destructive',
       });
     }
-  }, [events, saveEvents]);
+  }, [fetchEvents]);
 
   // Navigation
   const navigateDate = useCallback((direction: 'prev' | 'next' | 'today') => {
@@ -286,11 +517,13 @@ export function useCalendar() {
     events: filteredEvents(),
     allEvents: events,
     remindersEnabled,
+    loading,
     
     // Event operations
     createEvent,
     updateEvent,
     deleteEvent,
+    refreshEvents: fetchEvents,
     
     // Navigation
     navigateDate,

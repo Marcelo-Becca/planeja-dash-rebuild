@@ -23,6 +23,7 @@ export default function Calendar() {
     isEditing,
     filters,
     searchQuery,
+    loading,
     
     // Actions
     createEvent,
@@ -82,11 +83,11 @@ export default function Calendar() {
     }
   };
 
-  const handleSaveEvent = (eventData: Omit<CalendarEvent, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
+  const handleSaveEvent = async (eventData: Omit<CalendarEvent, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
     if (isEditing && selectedEvent) {
-      updateEvent(selectedEvent.id, eventData);
+      await updateEvent(selectedEvent.id, eventData);
     } else {
-      createEvent(eventData);
+      await createEvent(eventData);
     }
     stopEditing();
   };
@@ -96,13 +97,13 @@ export default function Calendar() {
     startEditing();
   };
 
-  const handleDeleteEvent = (eventId: string) => {
-    deleteEvent(eventId);
+  const handleDeleteEvent = async (eventId: string) => {
+    await deleteEvent(eventId);
     setShowEventDetail(false);
     selectEvent(null);
   };
 
-  const handleDuplicateEvent = (event: CalendarEvent) => {
+  const handleDuplicateEvent = async (event: CalendarEvent) => {
     const duplicateData = {
       ...event,
       title: `${event.title} (Cópia)`,
@@ -115,12 +116,12 @@ export default function Calendar() {
     delete (duplicateData as any).createdAt;
     delete (duplicateData as any).updatedAt;
     
-    createEvent(duplicateData);
+    await createEvent(duplicateData);
     setShowEventDetail(false);
   };
 
-  const handleUpdateEventStatus = (eventId: string, status: CalendarEvent['status']) => {
-    updateEvent(eventId, { status });
+  const handleUpdateEventStatus = async (eventId: string, status: CalendarEvent['status']) => {
+    await updateEvent(eventId, { status });
   };
 
   const renderCalendarView = () => {
@@ -185,7 +186,16 @@ export default function Calendar() {
 
         {/* Calendar Content */}
         <div className="flex-1 overflow-hidden">
-          {renderCalendarView()}
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Carregando eventos...</p>
+              </div>
+            </div>
+          ) : (
+            renderCalendarView()
+          )}
         </div>
 
         {/* Create/Edit Event Modal */}
