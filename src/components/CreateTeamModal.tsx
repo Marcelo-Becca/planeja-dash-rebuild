@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { useTeams } from "@/hooks/useTeams";
 import { useLocalData } from "@/hooks/useLocalData";
 import { cn } from "@/lib/utils";
 import {
@@ -65,7 +66,8 @@ const objectiveSuggestions = [
 
 export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
   const { toast } = useToast();
-  const { users, teams, addTeam } = useLocalData();
+  const { users } = useLocalData();
+  const { teams, createTeam } = useTeams();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showHelp, setShowHelp] = useState(false);
@@ -142,68 +144,17 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
     setIsLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1200));
-
-      const teamLeader = users.find(u => u.id === formData.leaderId)!;
-      const teamMembers = users.filter(u => formData.memberIds.includes(u.id));
-
-      const newTeam = addTeam({
+      const newTeam = await createTeam({
         name: formData.name.trim(),
         description: formData.description.trim(),
-        objective: formData.objective.trim(),
-        status: "active",
-        color: formData.color,
-        createdAt: new Date(),
-        createdBy: teamLeader,
-        leader: teamLeader,
-        members: teamMembers.map(member => ({
-          id: `member-${member.id}`,
-          user: member,
-          role: member.id === formData.leaderId ? "leader" : "member",
-          joinedAt: new Date(),
-          tasksCount: 0
-        })),
-        projects: [],
-        recentActivity: [{
-          id: `activity-${Date.now()}`,
-          type: "member_added",
-          description: `Equipe ${formData.name} foi criada`,
-          performedBy: teamLeader,
-          timestamp: new Date()
-        }]
+        main_objective: formData.objective.trim(),
+        members: formData.memberIds
       });
 
-      setRecentlyCreated(newTeam);
-
-      toast({
-        title: "Equipe criada com sucesso!",
-        description: `A equipe "${newTeam.name}" foi criada com ${teamMembers.length} membros.`,
-        action: (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Simulate undo
-              toast({
-                title: "Ação desfeita",
-                description: "Criação da equipe cancelada (simulação)",
-              });
-            }}
-            className="gap-1"
-          >
-            <Undo2 className="w-3 h-3" />
-            Desfazer
-          </Button>
-        ),
-      });
-
-      // Show success for a moment then close
-      setTimeout(() => {
+      if (newTeam) {
         onOpenChange(false);
         resetForm();
-      }, 2000);
-
+      }
     } catch (error) {
       toast({
         title: "Erro ao criar equipe",

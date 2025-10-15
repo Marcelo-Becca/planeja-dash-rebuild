@@ -14,26 +14,23 @@ import {
 } from '@/components/ui/select';
 import { TeamCard } from '@/components/TeamCard';
 import { Plus, Search, Users, Filter } from 'lucide-react';
-import { useLocalData } from '@/hooks/useLocalData';
-import { Team } from '@/data/mockData';
+import { useTeams, Team } from '@/hooks/useTeams';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Teams() {
-  const { teams } = useLocalData();
+  const { teams, loading, deleteTeam } = useTeams();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { toast } = useToast();
 
   const filteredTeams = useMemo(() => {
     return teams.filter(team => {
       const matchesSearch = team.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          team.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || team.status === statusFilter;
+                          team.description?.toLowerCase().includes(searchTerm.toLowerCase());
       
-      return matchesSearch && matchesStatus;
+      return matchesSearch;
     });
-  }, [searchTerm, statusFilter]);
+  }, [searchTerm, teams]);
 
   const handleCreateTeam = () => {
     setIsCreateModalOpen(true);
@@ -46,24 +43,11 @@ export default function Teams() {
     });
   };
 
-  const handleArchiveTeam = (team: Team) => {
-    const action = team.status === 'active' ? 'arquivada' : 'desarquivada';
-    toast({
-      title: "Equipe atualizada",
-      description: `${team.name} foi ${action} com sucesso.`,
-    });
+  const handleDeleteTeam = async (team: Team) => {
+    if (confirm(`Tem certeza que deseja excluir a equipe "${team.name}"?`)) {
+      await deleteTeam(team.id);
+    }
   };
-
-  const handleDeleteTeam = (team: Team) => {
-    toast({
-      title: "Equipe excluída",
-      description: `${team.name} foi removida permanentemente.`,
-      variant: "destructive",
-    });
-  };
-
-  const activeTeamsCount = teams.filter(t => t.status === 'active').length;
-  const archivedTeamsCount = teams.filter(t => t.status === 'archived').length;
 
   return (
     <Layout>
@@ -95,10 +79,7 @@ export default function Teams() {
             <div className="flex gap-4 flex-wrap">
               <Badge variant="secondary" className="px-4 py-2 text-sm bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
                 <Users className="mr-2 h-4 w-4" />
-                {activeTeamsCount} Ativas
-              </Badge>
-              <Badge variant="secondary" className="px-4 py-2 text-sm">
-                {archivedTeamsCount} Arquivadas
+                {teams.length} {teams.length === 1 ? 'Equipe' : 'Equipes'}
               </Badge>
             </div>
           </div>
@@ -116,21 +97,6 @@ export default function Teams() {
                   className="pl-10 bg-background/50"
                 />
               </div>
-              
-              {/* Status Filter */}
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                  <SelectTrigger className="w-40 bg-background/50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="active">Ativas</SelectItem>
-                    <SelectItem value="archived">Arquivadas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
 
@@ -140,10 +106,9 @@ export default function Teams() {
               {filteredTeams.map((team) => (
                 <TeamCard
                   key={team.id}
-                  team={team}
-                  onEdit={handleEditTeam}
-                  onArchive={handleArchiveTeam}
-                  onDelete={handleDeleteTeam}
+                  team={team as any}
+                  onEdit={handleEditTeam as any}
+                  onDelete={handleDeleteTeam as any}
                 />
               ))}
             </div>
