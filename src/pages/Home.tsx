@@ -1,5 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Users, BarChart3, Clock, Zap, Shield, ArrowRight, User, Settings, Target, Star, Quote } from "lucide-react";
@@ -8,18 +7,7 @@ import planejaLogo from "@/assets/planeja-logo-new.png";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      navigate('/dashboard');
-    }
-  }, [user, isLoading, navigate]);
-
-  if (isLoading) {
-    return null;
-  }
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -31,12 +19,20 @@ export default function Home() {
           </div>
           
           <nav className="flex items-center space-x-4">
-            <Button variant="ghost" asChild>
-              <Link to="/login">Entrar</Link>
-            </Button>
-            <Button asChild>
-              <Link to="/register">Criar conta</Link>
-            </Button>
+            {user ? (
+              <Button asChild>
+                <Link to="/dashboard">Ir para o Dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Entrar</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/register">Criar conta</Link>
+                </Button>
+              </>
+            )}
           </nav>
         </div>
       </header>
