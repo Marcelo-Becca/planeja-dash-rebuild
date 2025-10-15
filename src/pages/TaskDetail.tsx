@@ -109,21 +109,11 @@ export default function TaskDetail() {
     };
     createdAt: Date;
   }>>([]);
+  
   const task = tasks.find(t => t.id === id);
   const project = task?.project_id ? projects.find(p => p.id === task.project_id) : null;
 
-  if (tasksLoading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Carregando tarefa...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
+  // Move useEffect before any conditional returns
   useEffect(() => {
     if (task) {
       // Calculate progress based on subtasks
@@ -137,6 +127,19 @@ export default function TaskDetail() {
       }
     }
   }, [subtasks, task]);
+
+  if (tasksLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando tarefa...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
   if (!task) {
     const suggestions = tasks.filter(t => t.title.toLowerCase().includes(id?.toLowerCase() || '')).slice(0, 3).map(t => ({
       id: t.id,
