@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Calendar, User, CheckCircle2, Clock, AlertTriangle, MessageSquare, Plus, Settings, Trash2, Archive, Play, Pause, Flag } from 'lucide-react';
+import { ArrowLeft, Calendar, User, CheckCircle2, Clock, AlertTriangle, MessageSquare, Plus, Settings, Trash2, Archive, Play, Pause, Flag, X, Pencil } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
@@ -180,6 +180,29 @@ export default function TaskDetail() {
       ...st,
       completed: !st.completed
     } : st));
+  };
+
+  const handleEditSubtask = (subtaskId: string, newText: string) => {
+    const previousSubtasks = [...subtasks];
+    setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
+      ...st,
+      text: newText
+    } : st));
+    showUndoToast('Subtarefa atualizada', {
+      message: 'O nome da subtarefa foi alterado',
+      undo: () => setSubtasks(previousSubtasks)
+    });
+  };
+
+  const handleDeleteSubtask = (subtaskId: string) => {
+    const subtaskToDelete = subtasks.find(st => st.id === subtaskId);
+    if (subtaskToDelete) {
+      setSubtasks(prev => prev.filter(st => st.id !== subtaskId));
+      showUndoToast('Subtarefa excluída', {
+        message: 'A subtarefa foi removida',
+        undo: () => setSubtasks(prev => [...prev, subtaskToDelete])
+      });
+    }
   };
   const handleAddSubtask = () => {
     if (newSubtaskText.trim()) {
@@ -437,11 +460,26 @@ export default function TaskDetail() {
                         </div>
                       </div>}
 
-                    {subtasks.map(subtask => <div key={subtask.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+                    {subtasks.map(subtask => <div key={subtask.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg group hover:bg-muted/50 transition-colors">
                         <Checkbox checked={subtask.completed} onCheckedChange={() => handleSubtaskToggle(subtask.id)} />
-                        <span className={cn("flex-1 text-sm", subtask.completed && "line-through text-muted-foreground")}>
-                          {subtask.text}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <InlineEdit 
+                            value={subtask.text} 
+                            onSave={(newText) => handleEditSubtask(subtask.id, newText)}
+                            displayClassName={cn("text-sm", subtask.completed && "line-through text-muted-foreground")}
+                            className="text-sm"
+                            required
+                            validation={(value) => value.length > 200 ? 'Texto muito longo (max 200 caracteres)' : null}
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteSubtask(subtask.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>)}
                   </div>
                   
