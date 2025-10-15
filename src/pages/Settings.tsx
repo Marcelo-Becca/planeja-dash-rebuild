@@ -148,7 +148,7 @@ export default function Settings() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome completo</Label>
+                    <Label htmlFor="name">Nome de exibição</Label>
                     <Input
                       id="name"
                       value={profile.name}
