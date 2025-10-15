@@ -13,6 +13,8 @@ import { MultiTeamSelector } from '@/components/MultiTeamSelector';
 import { ArrowLeft, Edit3, Calendar as CalendarIcon, Users, CheckCircle2, Clock, Plus, Trash2, Activity, Target, Settings, User } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProjects } from '@/hooks/useProjects';
+import { useTeams } from '@/hooks/useTeams';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
@@ -51,18 +53,10 @@ export default function ProjectDetail() {
     id
   } = useParams();
   const navigate = useNavigate();
-  const {
-    projects,
-    tasks,
-    teams,
-    updateProject,
-    deleteProject,
-    updateTask,
-    users
-  } = useLocalData();
-  const {
-    user
-  } = useAuth();
+  const { projects, loading: projectsLoading, updateProject, deleteProject } = useProjects();
+  const { teams } = useTeams();
+  const { tasks, updateTask, users } = useLocalData();
+  const { user } = useAuth();
   const {
     showUndoToast
   } = useUndoToast();
@@ -72,21 +66,23 @@ export default function ProjectDetail() {
   const project = projects.find(p => p.id === id);
   const projectTasks = tasks.filter(task => task.projectId === id);
 
+  if (projectsLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando projeto...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   // Calculate real-time progress
   const completedTasks = projectTasks.filter(task => task.status === 'completed').length;
   const totalTasks = projectTasks.length;
   const progress = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
-
-  // Update project progress in real-time
-  useEffect(() => {
-    if (project && (project.progress !== progress || project.tasksCount !== totalTasks || project.completedTasks !== completedTasks)) {
-      updateProject(project.id, {
-        progress,
-        tasksCount: totalTasks,
-        completedTasks
-      });
-    }
-  }, [project, progress, totalTasks, completedTasks, updateProject]);
   if (!project) {
     const suggestions = projects.filter(p => p.name.toLowerCase().includes(id?.toLowerCase() || '')).slice(0, 3).map(p => ({
       id: p.id,
@@ -103,16 +99,13 @@ export default function ProjectDetail() {
       </Layout>;
   }
   const statusConfig = statusOptions.find(s => s.value === project.status) || statusOptions[0];
-  const isOverdue = new Date(project.deadline) < new Date() && project.status !== 'completed';
-  const handleUpdateProject = (updates: any) => {
-    const originalData = {
-      ...project
-    };
-    updateProject(project.id, updates);
-    showUndoToast('Projeto atualizado', {
-      message: 'As alterações foram salvas',
-      undo: () => updateProject(project.id, originalData)
-    });
+  const isOverdue = new Date(project.end_date) < new Date() && project.status !== 'completed';
+  const handleUpdateProject = async (updates: any) => {
+    try {
+      await updateProject(project.id, updates);
+    } catch (error) {
+      console.error('Error updating project:', error);
+    }
   };
   const handleStatusChange = (newStatus: string) => {
     const originalStatus = project.status;
@@ -130,10 +123,14 @@ export default function ProjectDetail() {
       });
     }
   };
-  const handleDeleteProject = () => {
+  const handleDeleteProject = async () => {
     if (window.confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
-      deleteProject(project.id);
-      navigate('/projects');
+      try {
+        await deleteProject(project.id);
+        navigate('/projects');
+      } catch (error) {
+        console.error('Error deleting project:', error);
+      }
     }
   };
   return <Layout>
@@ -153,7 +150,7 @@ export default function ProjectDetail() {
                 name: newName
               })} className="mb-1" displayClassName="text-xl md:text-2xl font-semibold text-foreground" validation={value => value.length > 50 ? 'Nome muito longo (max 50 caracteres)' : null} required />
                 <p className="text-muted-foreground text-sm">
-                  Criado por {project.createdBy?.name || 'Sistema'}
+                  Criado por {project.leader?.name || 'Sistema'}
                 </p>
               </div>
             </div>
@@ -201,7 +198,7 @@ export default function ProjectDetail() {
                     <div className="flex items-center text-sm text-muted-foreground">
                       <CalendarIcon className="w-4 h-4 mr-1" />
                       <span className={cn("font-medium", isOverdue && "text-red-400")}>
-                        Prazo: {new Date(project.deadline).toLocaleDateString('pt-BR')}
+                        Prazo: {new Date(project.end_date).toLocaleDateString('pt-BR')}
                       </span>
                     </div>
                   </div>
@@ -350,11 +347,8 @@ export default function ProjectDetail() {
                   {/* Team Management Section */}
                   {isManagingTeams && <div className="p-4 bg-muted/30 rounded-lg border animate-in fade-in-50 slide-in-from-top-2">
                       <h4 className="font-medium mb-3">Adicionar ou Remover Equipes</h4>
-                      <MultiTeamSelector teams={teams} selectedTeamIds={project.teams?.map(t => t.id) || []} onSelectionChange={teamIds => {
-                    const selectedTeams = teams.filter(t => teamIds.includes(t.id));
-                    handleUpdateProject({
-                      teams: selectedTeams
-                    });
+                      <MultiTeamSelector teams={teams} selectedTeamIds={project.teams?.map(t => t.id) || []} onSelectionChange={async (teamIds) => {
+                    await updateProject(project.id, {}, teamIds);
                   }} placeholder="Selecione as equipes para este projeto" />
                       <p className="text-xs text-muted-foreground mt-3">
                         As equipes selecionadas terão acesso ao projeto e suas tarefas.
@@ -363,55 +357,39 @@ export default function ProjectDetail() {
 
                   {/* Teams Display */}
                   {project.teams && project.teams.length > 0 ? <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {project.teams.map(team => <div key={team.id} className="p-4 border rounded-lg bg-card hover:shadow-md transition-all group" style={{
-                    borderLeftWidth: '4px',
-                    borderLeftColor: team.color
-                  }}>
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{
-                          backgroundColor: `${team.color}20`,
-                          color: team.color
-                        }}>
-                                <Users className="w-5 h-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-semibold text-foreground truncate">
-                                  {team.name}
-                                </h4>
-                                <p className="text-sm text-muted-foreground truncate">
-                                  {team.description || team.objective}
-                                </p>
+                      {project.teams.map(team => {
+                        const fullTeam = teams.find(t => t.id === team.id);
+                        return (
+                          <Link key={team.id} to={`/teams/${team.id}`} className="p-4 border rounded-lg bg-card hover:shadow-md transition-all group">
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-primary/10">
+                                  <Users className="w-5 h-5 text-primary" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                                    {team.name}
+                                  </h4>
+                                  {fullTeam && (
+                                    <p className="text-sm text-muted-foreground truncate">
+                                      {fullTeam.description || fullTeam.main_objective}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-1">
-                                <Users className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-muted-foreground">
-                                  {team.members.length} membro(s)
-                                </span>
+                            
+                            {fullTeam && (
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <Users className="w-4 h-4" />
+                                  <span>{fullTeam.members?.length || 0} membro(s)</span>
+                                </div>
                               </div>
-                              <Badge variant="secondary" className="text-xs">
-                                {team.status === 'active' ? 'Ativa' : 'Arquivada'}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          {/* Team Members Preview */}
-                          <div className="flex items-center gap-1 mt-3">
-                            {team.members.slice(0, 5).map(member => <Avatar key={member.id} className="w-7 h-7 border-2 border-background">
-                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                  {member.user.avatar}
-                                </AvatarFallback>
-                              </Avatar>)}
-                            {team.members.length > 5 && <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-medium">
-                                +{team.members.length - 5}
-                              </div>}
-                          </div>
-                        </div>)}
+                            )}
+                          </Link>
+                        );
+                      })}
                     </div> : <div className="text-center py-12">
                       <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
                         <Users className="w-8 h-8 text-muted-foreground" />
@@ -427,38 +405,6 @@ export default function ProjectDetail() {
                     </div>}
                 </CardContent>
               </Card>
-
-              {/* Individual Members Section (Legacy) */}
-              {project.team && project.team.length > 0 && <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5" />
-                      Membros Individuais ({project.team.length})
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {project.team.map((member, index) => <div key={member.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
-                          <Avatar className="w-10 h-10 mr-3">
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {member.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {member.name}
-                              {index === 0 && <Badge variant="secondary" className="ml-2 text-xs">
-                                  Líder
-                                </Badge>}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {member.role}
-                            </p>
-                          </div>
-                        </div>)}
-                    </div>
-                  </CardContent>
-                </Card>}
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
@@ -490,16 +436,16 @@ export default function ProjectDetail() {
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left font-normal">
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {project.deadline ? format(new Date(project.deadline), "PPP", {
+                            {project.end_date ? format(new Date(project.end_date), "PPP", {
                             locale: ptBR
                           }) : <span>Selecione uma data</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar mode="single" selected={new Date(project.deadline)} onSelect={date => {
+                          <Calendar mode="single" selected={new Date(project.end_date)} onSelect={date => {
                           if (date) {
                             handleUpdateProject({
-                              deadline: date
+                              end_date: date.toISOString().split('T')[0]
                             });
                           }
                         }} initialFocus />
@@ -537,13 +483,10 @@ export default function ProjectDetail() {
                       <User className="h-4 w-4" />
                       Líder do Projeto
                     </Label>
-                    <Select value={project.createdBy?.id || ''} onValueChange={userId => {
-                    const newLeader = users.find(u => u.id === userId);
-                    if (newLeader) {
-                      handleUpdateProject({
-                        createdBy: newLeader
-                      });
-                    }
+                    <Select value={project.leader_id || ''} onValueChange={userId => {
+                    handleUpdateProject({
+                      leader_id: userId
+                    });
                   }}>
                       <SelectTrigger className="max-w-md">
                         <SelectValue placeholder="Selecione o líder" />
