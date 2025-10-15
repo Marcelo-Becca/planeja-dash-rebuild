@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { testUsers, defaultTestUser, type TestUser } from '@/data/testUsers';
 
 interface User {
@@ -27,6 +25,7 @@ interface AuthContextType {
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
   updateProfile: (updates: { name?: string; role?: string; avatar?: string }) => void;
+  // Email verification methods (deprecated - kept for dev compatibility)
   verifyEmail: (token?: string) => Promise<void>;
   resendVerificationEmail: () => Promise<void>;
   isEmailVerified: boolean;
@@ -52,49 +51,34 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Simulação de base de dados local
+const MOCK_USERS_KEY = 'planeja_mock_users';
+const CURRENT_USER_KEY = 'planeja_current_user';
 const LOGIN_ATTEMPTS_KEY = 'planeja_login_attempts';
+
+// Usuário padrão para demonstração
+const DEMO_USER: User = defaultTestUser;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockTimeRemaining, setBlockTimeRemaining] = useState(0);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const { toast } = useToast();
 
-  // Initialize auth state
+  // Carregar usuário do localStorage ao inicializar
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        
-        if (session?.user) {
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          setUser(null);
-          setIsEmailVerified(false);
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setIsLoading(false);
-      }
-    });
-
-    // Check login attempts
+    const savedUser = localStorage.getItem(CURRENT_USER_KEY);
     const attempts = localStorage.getItem(LOGIN_ATTEMPTS_KEY);
+    
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      setUser(userData);
+      setIsEmailVerified(userData.emailVerified);
+    }
+    
     if (attempts) {
       const attemptsData = JSON.parse(attempts);
       if (attemptsData.count >= 5 && Date.now() - attemptsData.timestamp < 120000) {
@@ -103,43 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startBlockTimer(120000 - (Date.now() - attemptsData.timestamp));
       }
     }
-
-    return () => subscription.unsubscribe();
   }, []);
-
-  // Fetch user profile from database
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      if (profile) {
-        const userData: User = {
-          id: profile.id,
-          email: session?.user?.email || '',
-          name: profile.name,
-          displayName: profile.display_name || undefined,
-          avatar: profile.avatar || undefined,
-          role: profile.role || undefined,
-          company: profile.company || undefined,
-          phone: profile.phone || undefined,
-          emailVerified: true,
-          createdAt: new Date(profile.created_at),
-        };
-        setUser(userData);
-        setIsEmailVerified(true);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const startBlockTimer = (initialTime: number) => {
     setBlockTimeRemaining(Math.ceil(initialTime / 1000));
@@ -157,6 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 1000);
   };
 
+  const simulateDelay = (ms: number = 1500) => new Promise(resolve => setTimeout(resolve, ms));
+
   const login = async (email: string, password: string, rememberMe?: boolean) => {
     if (isBlocked) {
       throw new Error(`Muitas tentativas de login. Tente novamente em ${blockTimeRemaining} segundos.`);
@@ -165,12 +115,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      await simulateDelay();
+      
+      // Simular validação de credenciais
+      const isValidCredential = (
+        (email === 'demo@planejaplus.com' || email === 'demo') && password === 'Demo123!' ||
+        testUsers.some(testUser => 
+          (testUser.email === email || testUser.name.toLowerCase() === email.toLowerCase()) && 
+          password === 'Test123!'
+        )
+      );
 
-      if (error) {
+      if (!isValidCredential) {
         const newAttempts = loginAttempts + 1;
         setLoginAttempts(newAttempts);
         
@@ -181,19 +137,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (newAttempts >= 5) {
           setIsBlocked(true);
-          startBlockTimer(120000);
+          startBlockTimer(120000); // 2 minutos
           throw new Error('Muitas tentativas de login. Conta temporariamente bloqueada por 2 minutos.');
         }
         
-        throw new Error(error.message || 'E-mail ou senha incorretos');
+        throw new Error('E-mail ou senha incorretos');
       }
 
+      // Login bem-sucedido
+      let loggedUser: User;
+      
+      // Check if it's a test user login
+      const testUser = testUsers.find(tu => 
+        tu.email === email || tu.name.toLowerCase() === email.toLowerCase()
+      );
+      
+      if (testUser) {
+        loggedUser = testUser;
+      } else {
+        loggedUser = { ...DEMO_USER };
+      }
+      
+      // Email verification check removed - all users are auto-verified
+
+      setUser(loggedUser);
+      setIsEmailVerified(true);
       setLoginAttempts(0);
       localStorage.removeItem(LOGIN_ATTEMPTS_KEY);
       
+      if (rememberMe) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(loggedUser));
+      }
+      
       toast({
         title: "Login realizado com sucesso!",
-        description: `Bem-vindo de volta!`,
+        description: `Bem-vindo de volta, ${loggedUser.name}`,
       });
 
     } catch (error) {
@@ -212,26 +190,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      await simulateDelay(2000);
       
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: userData.name,
-            displayName: userData.displayName,
-            role: userData.role,
-            company: userData.company,
-            phone: userData.phone,
-          },
-        },
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Erro ao criar conta');
+      // Simular verificação de e-mail existente
+      if (testUsers.some(tu => tu.email === userData.email) || userData.email === 'teste@existe.com') {
+        throw new Error('E-mail já cadastrado. Faça login ou recupere sua senha.');
       }
+
+      // Criar novo usuário já verificado
+      const newUser: User = {
+        id: `user-${Date.now()}`,
+        name: userData.name,
+        email: userData.email,
+        displayName: userData.displayName,
+        phone: userData.phone,
+        role: userData.role,
+        company: userData.company,
+        emailVerified: true, // Auto-verified in public environment
+        createdAt: new Date(),
+      };
+
+      // Salvar na "base de dados" local
+      const existingUsers = JSON.parse(localStorage.getItem(MOCK_USERS_KEY) || '[]');
+      existingUsers.push(newUser);
+      localStorage.setItem(MOCK_USERS_KEY, JSON.stringify(existingUsers));
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
+      
+      setUser(newUser);
+      setIsEmailVerified(true);
       
       toast({
         title: "Conta criada com sucesso!",
@@ -251,11 +237,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchToTestUser = (testUser: TestUser) => {
-    // Legacy test user functionality - disabled with Supabase
+    const user: User = testUser;
+    setUser(user);
+    setIsEmailVerified(true);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+    
     toast({
-      title: "Funcionalidade desabilitada",
-      description: "Troca de usuário de teste não disponível com autenticação real",
-      variant: "destructive",
+      title: "Usuário alterado",
+      description: `Agora você está logado como ${testUser.name}`,
     });
   };
 
@@ -263,12 +252,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) throw error;
+      await simulateDelay();
       
+      // Simular envio de e-mail
       toast({
         title: "E-mail de recuperação enviado!",
         description: "Verifique sua caixa de entrada e spam.",
@@ -277,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       toast({
         title: "Erro ao enviar e-mail",
-        description: error instanceof Error ? error.message : "Tente novamente em alguns minutos.",
+        description: "Tente novamente em alguns minutos.",
         variant: "destructive",
       });
       throw error;
@@ -286,16 +272,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Deprecated: Email verification removed from public interface
   const verifyEmail = async (token?: string) => {
-    // Legacy compatibility
+    // Legacy compatibility for dev tools
+    if (user && !user.emailVerified) {
+      const updatedUser = { ...user, emailVerified: true };
+      setUser(updatedUser);
+      setIsEmailVerified(true);
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      
+      toast({
+        title: "Verificação simulada",
+        description: "Para compatibilidade dev - usuário verificado.",
+      });
+    }
     return Promise.resolve();
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = () => {
     setUser(null);
-    setSession(null);
     setIsEmailVerified(false);
+    localStorage.removeItem(CURRENT_USER_KEY);
     
     toast({
       title: "Logout realizado",
@@ -303,44 +300,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const updateProfile = async (updates: { name?: string; role?: string; avatar?: string }) => {
+  const updateProfile = (updates: { name?: string; role?: string; avatar?: string }) => {
     if (!user) return;
     
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: updates.name,
-          role: updates.role,
-          avatar: updates.avatar,
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      const updatedUser = {
-        ...user,
-        ...(updates.name && { name: updates.name }),
-        ...(updates.role && { role: updates.role }),
-        ...(updates.avatar && { avatar: updates.avatar }),
-      };
-      
-      setUser(updatedUser);
-
-      toast({
-        title: "Perfil atualizado",
-        description: "Suas informações foram atualizadas com sucesso.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erro ao atualizar perfil",
-        description: error instanceof Error ? error.message : "Erro desconhecido",
-        variant: "destructive",
-      });
-    }
+    const updatedUser = {
+      ...user,
+      ...(updates.name && { name: updates.name }),
+      ...(updates.role && { role: updates.role }),
+      ...(updates.avatar && { avatar: updates.avatar }),
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
   };
 
+  // Deprecated: Email verification removed from public interface
   const resendVerificationEmail = async () => {
+    // Legacy compatibility - no-op for dev tools
+    toast({
+      title: "Funcionalidade removida",
+      description: "Verificação por e-mail não é mais necessária.",
+    });
     return Promise.resolve();
   };
 
