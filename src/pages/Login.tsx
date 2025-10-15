@@ -68,7 +68,7 @@ const Login = () => {
     
     try {
       await login(formData.email, formData.password, formData.rememberMe);
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       // Erros já tratados no contexto
     } finally {

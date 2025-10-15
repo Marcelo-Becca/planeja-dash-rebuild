@@ -1,11 +1,26 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Users, BarChart3, Clock, Zap, Shield, ArrowRight, User, Settings, Target, Star, Quote } from "lucide-react";
 import heroMockup from "@/assets/planeja-mockup-new.jpg";
 import planejaLogo from "@/assets/planeja-logo-new.png";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/dashboard');
+    }
+  }, [user, isLoading, navigate]);
+
+  if (isLoading) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
