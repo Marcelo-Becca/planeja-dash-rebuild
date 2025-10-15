@@ -127,7 +127,8 @@ export default function CreateTaskModal({ open, onOpenChange, preselectedProject
         createdBy,
         assignedTo: assignedUsers,
         projectId: formData.projectId || 'independent',
-        comments: []
+        comments: [],
+        subtasks: formData.subtasks
       });
       
       toast({

@@ -52,6 +52,12 @@ export interface Project {
   completedTasks: number;
 }
 
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -64,6 +70,7 @@ export interface Task {
   assignedTo: User[];
   projectId: string;
   comments: string[];
+  subtasks?: SubTask[];
 }
 
 export interface Team {
