@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
 import { User, Lock, Settings as SettingsIcon, Save, Upload, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Settings() {
   const { toast } = useToast();
@@ -58,7 +59,7 @@ export default function Settings() {
     });
   };
 
-  const handleUpdatePassword = () => {
+  const handleUpdatePassword = async () => {
     if (passwords.new !== passwords.confirm) {
       toast({
         title: "Erro na senha",
@@ -72,6 +73,44 @@ export default function Settings() {
       toast({
         title: "Senha muito curta",
         description: "A nova senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.email) {
+      toast({
+        title: "Erro",
+        description: "Usuário não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Verify current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: passwords.current,
+    });
+
+    if (signInError) {
+      toast({
+        title: "Erro na senha atual",
+        description: "A senha atual está incorreta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Update password
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: passwords.new,
+    });
+
+    if (updateError) {
+      toast({
+        title: "Erro ao atualizar senha",
+        description: updateError.message,
         variant: "destructive",
       });
       return;
