@@ -166,9 +166,6 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       newErrors.projectDeadline = "Prazo deve ser posterior à data de início";
     }
 
-    if (!projectData.leaderId) {
-      newErrors.projectLeader = "Líder do projeto é obrigatório";
-    }
 
     return newErrors;
   };
@@ -216,7 +213,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         priority: projectData.priority,
         status: projectData.status,
         tags: projectData.tags.length > 0 ? projectData.tags : undefined,
-        leader_id: projectData.leaderId,
+        leader_id: user.id,
         team_ids: selectedTeamIds,
       });
 
@@ -502,98 +499,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
               {/* Tags */}
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Tag className="w-4 h-4" />
-                  Tags (opcional)
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Adicionar tag..."
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addTag()}
-                    className="flex-1"
-                  />
-                  <Button type="button" onClick={addTag} size="sm">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-                
-                {/* Tag suggestions */}
-                <div className="flex flex-wrap gap-1">
-                  {tagSuggestions.slice(0, 6).map((suggestion) => (
-                    <Button
-                      key={suggestion}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        if (!projectData.tags.includes(suggestion)) {
-                          setProjectData(prev => ({ ...prev, tags: [...prev.tags, suggestion] }));
-                        }
-                      }}
-                      className="h-6 px-2 text-xs"
-                      disabled={projectData.tags.includes(suggestion)}
-                    >
-                      {suggestion}
-                    </Button>
-                  ))}
-                </div>
-
-                {/* Selected tags */}
-                {projectData.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {projectData.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center gap-1">
-                        {tag}
-                        <X 
-                          className="h-3 w-3 cursor-pointer hover:text-red-500" 
-                          onClick={() => removeTag(tag)}
-                        />
-                      </Badge>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Project Leader */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  Líder do Projeto
-                  <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={projectData.leaderId}
-                  onValueChange={(value) => {
-                    setProjectData(prev => ({ 
-                      ...prev, 
-                      leaderId: value
-                    }));
-                    if (errors.projectLeader) setErrors(prev => ({ ...prev, projectLeader: "" }));
-                  }}
-                >
-                  <SelectTrigger className={cn(errors.projectLeader && "border-red-500")}>
-                    <SelectValue placeholder="Selecione o líder" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback>{user.avatar}</AvatarFallback>
-                          </Avatar>
-                          {user.name} - {user.role}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.projectLeader && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4" />
-                    {errors.projectLeader}
-                  </p>
-                )}
+...
               </div>
             </div>
           </TabsContent>
