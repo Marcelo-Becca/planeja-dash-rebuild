@@ -5,10 +5,16 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Check, ChevronsUpDown, X, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Team } from '@/data/mockData';
+
+interface TeamForSelector {
+  id: string;
+  name: string;
+  color?: string;
+  memberCount?: number;
+}
 
 interface MultiTeamSelectorProps {
-  teams: Team[];
+  teams: TeamForSelector[];
   selectedTeamIds: string[];
   onSelectionChange: (teamIds: string[]) => void;
   placeholder?: string;
@@ -75,12 +81,12 @@ export function MultiTeamSelector({
                     <div className="flex items-center gap-3 flex-1">
                       <div
                         className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: team.color }}
+                        style={{ backgroundColor: team.color || '#3B82F6' }}
                       />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{team.name}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {team.members.length} membro(s)
+                          {team.memberCount || 0} membro(s)
                         </p>
                       </div>
                       <Check
@@ -107,9 +113,9 @@ export function MultiTeamSelector({
               variant="secondary"
               className="gap-2 pr-1 pl-3 py-1.5 animate-in fade-in-50 zoom-in-95"
               style={{
-                backgroundColor: `${team.color}15`,
-                borderColor: `${team.color}40`,
-                color: team.color
+                backgroundColor: `${team.color || '#3B82F6'}15`,
+                borderColor: `${team.color || '#3B82F6'}40`,
+                color: team.color || '#3B82F6'
               }}
             >
               <span className="font-medium">{team.name}</span>

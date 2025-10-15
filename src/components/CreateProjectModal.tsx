@@ -31,7 +31,9 @@ import {
   Undo2
 } from "lucide-react";
 import { MultiTeamSelector } from "./MultiTeamSelector";
-import { Project, Team, User } from "@/data/mockData";
+import { useTeams } from "@/hooks/useTeams";
+import { useProjects } from "@/hooks/useProjects";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CreateProjectModalProps {
   open: boolean;
@@ -45,10 +47,9 @@ interface ProjectFormData {
   deadline: Date | undefined;
   leaderId: string;
   category: string;
-  priority: "low" | "medium" | "high";
-  status: "active" | "on-hold";
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "active" | "on-hold" | "planning" | "completed";
   tags: string[];
-  memberIds: string[];
 }
 
 interface TeamFormData {
@@ -63,7 +64,15 @@ interface TeamFormData {
 const priorityOptions = [
   { value: "low", label: "Baixa", color: "bg-green-100 text-green-800 border-green-200" },
   { value: "medium", label: "Média", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-  { value: "high", label: "Alta", color: "bg-red-100 text-red-800 border-red-200" }
+  { value: "high", label: "Alta", color: "bg-red-100 text-red-800 border-red-200" },
+  { value: "urgent", label: "Urgente", color: "bg-purple-100 text-purple-800 border-purple-200" }
+];
+
+const statusOptions = [
+  { value: "planning", label: "Planejamento" },
+  { value: "active", label: "Ativo" },
+  { value: "on-hold", label: "Pausado" },
+  { value: "completed", label: "Concluído" }
 ];
 
 const categoryOptions = [
@@ -89,14 +98,14 @@ const tagSuggestions = [
 
 export default function CreateProjectModal({ open, onOpenChange }: CreateProjectModalProps) {
   const { toast } = useToast();
-  const { users, teams, addProject, addTeam } = useLocalData();
+  const { users } = useLocalData();
+  const { teams } = useTeams();
+  const { createProject } = useProjects();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentTab, setCurrentTab] = useState("project");
   const [showHelp, setShowHelp] = useState(false);
-  const [createTeamMode, setCreateTeamMode] = useState<"existing">("existing");
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
-  const [recentlyCreated, setRecentlyCreated] = useState<{project?: Project, team?: Team}>({});
 
   const [projectData, setProjectData] = useState<ProjectFormData>({
     name: "",
@@ -106,18 +115,8 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     leaderId: "",
     category: "",
     priority: "medium",
-    status: "active",
-    tags: [],
-    memberIds: []
-  });
-
-  const [teamData, setTeamData] = useState<TeamFormData>({
-    name: "",
-    description: "",
-    leaderId: "",
-    memberIds: [],
-    color: teamColors[0],
-    objective: ""
+    status: "planning",
+    tags: []
   });
 
   const [newTag, setNewTag] = useState("");
@@ -131,17 +130,8 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       leaderId: "",
       category: "",
       priority: "medium",
-      status: "active",
-      tags: [],
-      memberIds: []
-    });
-    setTeamData({
-      name: "",
-      description: "",
-      leaderId: "",
-      memberIds: [],
-      color: teamColors[0],
-      objective: ""
+      status: "planning",
+      tags: []
     });
     setNewTag("");
     setErrors({});
@@ -160,6 +150,14 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     
     if (!projectData.description.trim()) {
       newErrors.projectDescription = "Descrição é obrigatória";
+    }
+
+    if (!projectData.category) {
+      newErrors.projectCategory = "Categoria é obrigatória";
+    }
+
+    if (!projectData.startDate) {
+      newErrors.projectStartDate = "Data de início é obrigatória";
     }
 
     if (!projectData.deadline) {
@@ -204,73 +202,29 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     setIsLoading(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
 
-      // Get selected teams
-      const selectedTeams = teams.filter(t => selectedTeamIds.includes(t.id));
-
-      // Create project
-      const projectLeader = users.find(u => u.id === projectData.leaderId)!;
-      
-      // Collect all unique members from all selected teams
-      const allMembersMap = new Map<string, User>();
-      selectedTeams.forEach(team => {
-        team.members.forEach(member => {
-          allMembersMap.set(member.user.id, member.user);
-        });
-      });
-      const projectMembers = Array.from(allMembersMap.values());
-
-      const newProject = addProject({
+      await createProject({
         name: projectData.name,
+        category: projectData.category,
         description: projectData.description,
+        start_date: projectData.startDate!,
+        end_date: projectData.deadline!,
+        priority: projectData.priority,
         status: projectData.status,
-        deadline: projectData.deadline!,
-        createdBy: projectLeader,
-        team: projectMembers,
-        teams: selectedTeams,
-        progress: 0,
-        tasksCount: 0,
-        completedTasks: 0
+        tags: projectData.tags.length > 0 ? projectData.tags : undefined,
+        leader_id: projectData.leaderId,
+        team_ids: selectedTeamIds,
       });
 
-      setRecentlyCreated({ project: newProject });
-
-      toast({
-        title: "Sucesso!",
-        description: `Projeto "${newProject.name}" criado com sucesso!`,
-        action: (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              // Simulate undo
-              toast({
-                title: "Ação desfeita",
-                description: "Criação cancelada (simulação)",
-              });
-            }}
-            className="gap-1"
-          >
-            <Undo2 className="w-3 h-3" />
-            Desfazer
-          </Button>
-        ),
-      });
-
-      // Show success for a moment then close
-      setTimeout(() => {
-        onOpenChange(false);
-        resetForm();
-      }, 2000);
+      onOpenChange(false);
+      resetForm();
 
     } catch (error) {
-      toast({
-        title: "Erro ao criar projeto",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive",
-      });
+      console.error('Error creating project:', error);
     } finally {
       setIsLoading(false);
     }
@@ -301,23 +255,6 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     setProjectData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
   };
 
-  const toggleProjectMember = (userId: string) => {
-    setProjectData(prev => ({
-      ...prev,
-      memberIds: prev.memberIds.includes(userId)
-        ? prev.memberIds.filter(id => id !== userId)
-        : [...prev.memberIds, userId]
-    }));
-  };
-
-  const toggleTeamMember = (userId: string) => {
-    setTeamData(prev => ({
-      ...prev,
-      memberIds: prev.memberIds.includes(userId)
-        ? prev.memberIds.filter(id => id !== userId)
-        : [...prev.memberIds, userId]
-    }));
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -553,8 +490,11 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="on-hold">Em Pausa</SelectItem>
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -665,7 +605,12 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
               {/* Multiple Team Selection */}
               <div className="space-y-2">
                 <MultiTeamSelector
-                  teams={teams}
+                  teams={teams.map(t => ({ 
+                    id: t.id, 
+                    name: t.name,
+                    color: '#3B82F6',
+                    memberCount: t.members?.length || 0
+                  }))}
                   selectedTeamIds={selectedTeamIds}
                   onSelectionChange={(teamIds) => {
                     setSelectedTeamIds(teamIds);

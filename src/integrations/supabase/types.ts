@@ -50,6 +50,95 @@ export type Database = {
         }
         Relationships: []
       }
+      project_teams: {
+        Row: {
+          assigned_at: string
+          id: string
+          project_id: string
+          team_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          project_id: string
+          team_id: string
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          project_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_teams_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_teams_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          end_date: string
+          id: string
+          leader_id: string | null
+          name: string
+          priority: string
+          start_date: string
+          status: string
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          end_date: string
+          id?: string
+          leader_id?: string | null
+          name: string
+          priority: string
+          start_date: string
+          status: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string
+          id?: string
+          leader_id?: string | null
+          name?: string
+          priority?: string
+          start_date?: string
+          status?: string
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_leader_id_fkey"
+            columns: ["leader_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           id: string

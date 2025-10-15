@@ -4,22 +4,32 @@ import CreateProjectModal from "@/components/CreateProjectModal";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search, FolderPlus } from "lucide-react";
-import { useLocalData } from "@/hooks/useLocalData";
+import { useProjects } from "@/hooks/useProjects";
 import { useState } from "react";
 
 export default function Projects() {
-  const { projects } = useLocalData();
+  const { projects, loading } = useProjects();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         (project.description?.toLowerCase() || '').includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || project.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-muted-foreground">Carregando projetos...</div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -68,6 +78,7 @@ export default function Projects() {
                 className="px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors text-foreground"
               >
                 <option value="all">Todos os Status</option>
+                <option value="planning">Planejamento</option>
                 <option value="active">Ativo</option>
                 <option value="completed">Concluído</option>
                 <option value="on-hold">Pausado</option>

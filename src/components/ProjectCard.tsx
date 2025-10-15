@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, Users, CheckCircle2, Clock } from "lucide-react";
-import { Project } from "@/data/mockData";
+import { Project } from "@/hooks/useProjects";
 import { cn } from "@/lib/utils";
 
 interface ProjectCardProps {
@@ -8,6 +8,12 @@ interface ProjectCardProps {
 }
 
 const statusConfig = {
+  planning: {
+    label: "Planejamento",
+    color: "text-chart-default",
+    bgColor: "bg-chart-default/10",
+    borderColor: "border-chart-default/20"
+  },
   active: {
     label: "Ativo",
     color: "text-chart-progress",
@@ -30,7 +36,16 @@ const statusConfig = {
 
 export default function ProjectCard({ project }: ProjectCardProps) {
   const status = statusConfig[project.status] || statusConfig.active;
-  const isOverdue = project.deadline < new Date() && project.status !== 'completed';
+  const deadline = new Date(project.end_date);
+  const isOverdue = deadline < new Date() && project.status !== 'completed';
+  
+  // Calculate progress (placeholder - you'll need to fetch tasks data)
+  const progress = 0;
+  const tasksCount = 0;
+  const completedTasks = 0;
+  
+  // Get team members count
+  const teamMembersCount = project.teams?.length || 0;
 
   return (
     <Link 
@@ -48,7 +63,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               {project.name}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {project.description}
+              {project.description || 'Sem descrição'}
             </p>
           </div>
           
@@ -72,13 +87,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">Progresso</span>
             <span className="text-sm font-medium text-card-foreground">
-              {project.completedTasks}/{project.tasksCount} tarefas
+              {completedTasks}/{tasksCount} tarefas
             </span>
           </div>
           <div className="w-full bg-secondary/50 rounded-full h-2">
             <div 
               className="bg-gradient-brand h-2 rounded-full transition-all duration-300"
-              style={{ width: `${project.progress}%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>
@@ -91,31 +106,31 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               <span className={cn(
                 isOverdue && "text-chart-overdue font-medium"
               )}>
-                {project.deadline.toLocaleDateString('pt-BR')}
+                {deadline.toLocaleDateString('pt-BR')}
               </span>
             </div>
             <div className="flex items-center">
               <Users className="w-4 h-4 mr-1" />
-              <span>{project.team.length} membros</span>
+              <span>{teamMembersCount} {teamMembersCount === 1 ? 'equipe' : 'equipes'}</span>
             </div>
           </div>
           
           {/* Team Avatars */}
-          <div className="flex -space-x-2">
-            {project.team.slice(0, 3).map((member) => (
+          {project.leader && (
+            <div className="flex -space-x-2">
               <div
-                key={member.id}
                 className="w-6 h-6 bg-gradient-brand rounded-full flex items-center justify-center text-xs font-medium text-sidebar-primary-foreground border-2 border-card"
+                title={project.leader.name}
               >
-                {member.avatar}
+                {project.leader.name.charAt(0).toUpperCase()}
               </div>
-            ))}
-            {project.team.length > 3 && (
-              <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center text-xs font-medium text-muted-foreground border-2 border-card">
-                +{project.team.length - 3}
-              </div>
-            )}
-          </div>
+              {teamMembersCount > 0 && (
+                <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center text-xs font-medium text-muted-foreground border-2 border-card">
+                  +{teamMembersCount}
+                </div>
+              )}
+            </div>
+          )}
         </footer>
       </article>
     </Link>
