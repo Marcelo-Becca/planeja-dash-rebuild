@@ -8,11 +8,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import Layout from "@/components/Layout";
-import { User, Lock, Settings as SettingsIcon, Save, Upload } from "lucide-react";
+import { User, Lock, Settings as SettingsIcon, Save, Upload, LogOut } from "lucide-react";
 
 export default function Settings() {
   const { toast } = useToast();
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, logout } = useAuth();
   
   // Profile settings initialized from auth user
   const [profile, setProfile] = useState({
@@ -288,6 +288,29 @@ export default function Settings() {
                     Salvar preferências
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Bloco 4: Sair da Conta */}
+            <Card className="border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <LogOut className="h-5 w-5" />
+                  Sair da Conta
+                </CardTitle>
+                <CardDescription>
+                  Encerre sua sessão atual e volte à tela de login
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={logout} 
+                  variant="destructive" 
+                  className="min-w-[140px]"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair da conta
+                </Button>
               </CardContent>
             </Card>
           </div>
