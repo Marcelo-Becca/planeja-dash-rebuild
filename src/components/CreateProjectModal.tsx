@@ -15,31 +15,15 @@ import { useLocalData } from "@/hooks/useLocalData";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  Calendar as CalendarIcon,
-  Plus,
-  X,
-  AlertCircle,
-  Users,
-  FolderPlus,
-  Building2,
-  Target,
-  Tag,
-  HelpCircle,
-  CheckCircle2,
-  Loader2,
-  Undo2
-} from "lucide-react";
+import { Calendar as CalendarIcon, Plus, X, AlertCircle, Users, FolderPlus, Building2, Target, Tag, HelpCircle, CheckCircle2, Loader2, Undo2 } from "lucide-react";
 import { MultiTeamSelector } from "./MultiTeamSelector";
 import { useTeams } from "@/hooks/useTeams";
 import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
-
 interface CreateProjectModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
 interface ProjectFormData {
   name: string;
   description: string;
@@ -51,7 +35,6 @@ interface ProjectFormData {
   status: "active" | "on-hold" | "planning" | "completed";
   tags: string[];
 }
-
 interface TeamFormData {
   name: string;
   description: string;
@@ -60,53 +43,60 @@ interface TeamFormData {
   color: string;
   objective: string;
 }
-
-const priorityOptions = [
-  { value: "low", label: "Baixa", color: "bg-green-100 text-green-800 border-green-200" },
-  { value: "medium", label: "Média", color: "bg-yellow-100 text-yellow-800 border-yellow-200" },
-  { value: "high", label: "Alta", color: "bg-red-100 text-red-800 border-red-200" },
-  { value: "urgent", label: "Urgente", color: "bg-purple-100 text-purple-800 border-purple-200" }
-];
-
-const statusOptions = [
-  { value: "planning", label: "Planejamento" },
-  { value: "active", label: "Ativo" },
-  { value: "on-hold", label: "Pausado" },
-  { value: "completed", label: "Concluído" }
-];
-
-const categoryOptions = [
-  "Desenvolvimento",
-  "Design",
-  "Marketing", 
-  "Vendas",
-  "Operações",
-  "Pesquisa",
-  "Outro"
-];
-
-const teamColors = [
-  "#3B82F6", "#EF4444", "#10B981", "#F59E0B", 
-  "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"
-];
-
-const tagSuggestions = [
-  "Frontend", "Backend", "Mobile", "Web", "API", "Database",
-  "Marketing", "SEO", "Social Media", "Email", "Content",
-  "UI/UX", "Branding", "Research", "Testing", "Analytics"
-];
-
-export default function CreateProjectModal({ open, onOpenChange }: CreateProjectModalProps) {
-  const { toast } = useToast();
-  const { users } = useLocalData();
-  const { teams } = useTeams();
-  const { createProject } = useProjects();
+const priorityOptions = [{
+  value: "low",
+  label: "Baixa",
+  color: "bg-green-100 text-green-800 border-green-200"
+}, {
+  value: "medium",
+  label: "Média",
+  color: "bg-yellow-100 text-yellow-800 border-yellow-200"
+}, {
+  value: "high",
+  label: "Alta",
+  color: "bg-red-100 text-red-800 border-red-200"
+}, {
+  value: "urgent",
+  label: "Urgente",
+  color: "bg-purple-100 text-purple-800 border-purple-200"
+}];
+const statusOptions = [{
+  value: "planning",
+  label: "Planejamento"
+}, {
+  value: "active",
+  label: "Ativo"
+}, {
+  value: "on-hold",
+  label: "Pausado"
+}, {
+  value: "completed",
+  label: "Concluído"
+}];
+const categoryOptions = ["Desenvolvimento", "Design", "Marketing", "Vendas", "Operações", "Pesquisa", "Outro"];
+const teamColors = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
+const tagSuggestions = ["Frontend", "Backend", "Mobile", "Web", "API", "Database", "Marketing", "SEO", "Social Media", "Email", "Content", "UI/UX", "Branding", "Research", "Testing", "Analytics"];
+export default function CreateProjectModal({
+  open,
+  onOpenChange
+}: CreateProjectModalProps) {
+  const {
+    toast
+  } = useToast();
+  const {
+    users
+  } = useLocalData();
+  const {
+    teams
+  } = useTeams();
+  const {
+    createProject
+  } = useProjects();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentTab, setCurrentTab] = useState("project");
   const [showHelp, setShowHelp] = useState(false);
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
-
   const [projectData, setProjectData] = useState<ProjectFormData>({
     name: "",
     description: "",
@@ -118,9 +108,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     status: "planning",
     tags: []
   });
-
   const [newTag, setNewTag] = useState("");
-
   const resetForm = () => {
     setProjectData({
       name: "",
@@ -138,72 +126,62 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
     setSelectedTeamIds([]);
     setCurrentTab("project");
   };
-
   const validateProject = () => {
     const newErrors: Record<string, string> = {};
-    
     if (!projectData.name.trim()) {
       newErrors.projectName = "Nome do projeto é obrigatório";
     } else if (projectData.name.trim().length < 3) {
       newErrors.projectName = "Nome deve ter pelo menos 3 caracteres";
     }
-    
     if (!projectData.description.trim()) {
       newErrors.projectDescription = "Descrição é obrigatória";
     }
-
     if (!projectData.category) {
       newErrors.projectCategory = "Categoria é obrigatória";
     }
-
     if (!projectData.startDate) {
       newErrors.projectStartDate = "Data de início é obrigatória";
     }
-
     if (!projectData.deadline) {
       newErrors.projectDeadline = "Prazo final é obrigatório";
     } else if (projectData.startDate && projectData.deadline <= projectData.startDate) {
       newErrors.projectDeadline = "Prazo deve ser posterior à data de início";
     }
-
-
     return newErrors;
   };
-
   const validateTeam = () => {
     const newErrors: Record<string, string> = {};
-    
     if (selectedTeamIds.length === 0) {
       newErrors.existingTeam = "Selecione pelo menos uma equipe";
     }
-
     return newErrors;
   };
-
   const handleSubmit = async () => {
     const projectErrors = validateProject();
     const teamErrors = validateTeam();
-    const allErrors = { ...projectErrors, ...teamErrors };
-
+    const allErrors = {
+      ...projectErrors,
+      ...teamErrors
+    };
     setErrors(allErrors);
-
     if (Object.keys(allErrors).length > 0) {
       toast({
         title: "Erro na validação",
         description: "Por favor, corrija os erros antes de continuar.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsLoading(true);
-
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: {
+          user
+        }
+      } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
-
       await createProject({
         name: projectData.name,
         category: projectData.category,
@@ -214,22 +192,18 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         status: projectData.status,
         tags: projectData.tags.length > 0 ? projectData.tags : undefined,
         leader_id: user.id,
-        team_ids: selectedTeamIds,
+        team_ids: selectedTeamIds
       });
-
       onOpenChange(false);
       resetForm();
-
     } catch (error) {
       console.error('Error creating project:', error);
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleCancel = () => {
     const hasProjectData = projectData.name || projectData.description;
-    
     if (hasProjectData) {
       if (confirm("Tem certeza que deseja cancelar? Todas as informações serão perdidas.")) {
         onOpenChange(false);
@@ -240,21 +214,22 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
       resetForm();
     }
   };
-
   const addTag = () => {
     if (newTag.trim() && !projectData.tags.includes(newTag.trim())) {
-      setProjectData(prev => ({ ...prev, tags: [...prev.tags, newTag.trim()] }));
+      setProjectData(prev => ({
+        ...prev,
+        tags: [...prev.tags, newTag.trim()]
+      }));
       setNewTag("");
     }
   };
-
   const removeTag = (tag: string) => {
-    setProjectData(prev => ({ ...prev, tags: prev.tags.filter(t => t !== tag) }));
+    setProjectData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(t => t !== tag)
+    }));
   };
-
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -266,12 +241,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                 Configure seu projeto e associe uma equipe existente
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHelp(!showHelp)}
-              className="gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowHelp(!showHelp)} className="gap-2">
               <HelpCircle className="w-4 h-4" />
               Como funciona
             </Button>
@@ -279,8 +249,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
         </DialogHeader>
 
         {/* Help Section */}
-        {showHelp && (
-          <div className="bg-muted/50 p-4 rounded-lg border mb-4">
+        {showHelp && <div className="bg-muted/50 p-4 rounded-lg border mb-4">
             <h4 className="font-medium mb-2">Como criar um projeto:</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Preencha as informações básicas do projeto na primeira aba</li>
@@ -289,8 +258,7 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
               <li>• Você pode adicionar tags para facilitar buscas e filtros</li>
               <li>• Após criar, você pode adicionar tarefas e acompanhar o progresso</li>
             </ul>
-          </div>
-        )}
+          </div>}
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -316,40 +284,36 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                     Nome do Projeto
                     <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="projectName"
-                    placeholder="Ex.: Sistema de Gestão"
-                    value={projectData.name}
-                    onChange={(e) => {
-                      setProjectData(prev => ({ ...prev, name: e.target.value }));
-                      if (errors.projectName) setErrors(prev => ({ ...prev, projectName: "" }));
-                    }}
-                    className={cn(errors.projectName && "border-red-500")}
-                  />
-                  {errors.projectName && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
+                  <Input id="projectName" placeholder="Ex.: Sistema de Gestão" value={projectData.name} onChange={e => {
+                  setProjectData(prev => ({
+                    ...prev,
+                    name: e.target.value
+                  }));
+                  if (errors.projectName) setErrors(prev => ({
+                    ...prev,
+                    projectName: ""
+                  }));
+                }} className={cn(errors.projectName && "border-red-500")} />
+                  {errors.projectName && <p className="text-sm text-red-500 flex items-center gap-1">
                       <AlertCircle className="h-4 w-4" />
                       {errors.projectName}
-                    </p>
-                  )}
+                    </p>}
                 </div>
 
                 {/* Category */}
                 <div className="space-y-2">
                   <Label>Categoria</Label>
-                  <Select
-                    value={projectData.category}
-                    onValueChange={(value) => setProjectData(prev => ({ ...prev, category: value }))}
-                  >
+                  <Select value={projectData.category} onValueChange={value => setProjectData(prev => ({
+                  ...prev,
+                  category: value
+                }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione uma categoria" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categoryOptions.map((category) => (
-                        <SelectItem key={category} value={category}>
+                      {categoryOptions.map(category => <SelectItem key={category} value={category}>
                           {category}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -361,22 +325,20 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   Descrição
                   <span className="text-red-500">*</span>
                 </Label>
-                <Textarea
-                  id="projectDescription"
-                  placeholder="Descreva o objetivo e escopo do projeto..."
-                  value={projectData.description}
-                  onChange={(e) => {
-                    setProjectData(prev => ({ ...prev, description: e.target.value }));
-                    if (errors.projectDescription) setErrors(prev => ({ ...prev, projectDescription: "" }));
-                  }}
-                  className={cn("min-h-20", errors.projectDescription && "border-red-500")}
-                />
-                {errors.projectDescription && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
+                <Textarea id="projectDescription" placeholder="Descreva o objetivo e escopo do projeto..." value={projectData.description} onChange={e => {
+                setProjectData(prev => ({
+                  ...prev,
+                  description: e.target.value
+                }));
+                if (errors.projectDescription) setErrors(prev => ({
+                  ...prev,
+                  projectDescription: ""
+                }));
+              }} className={cn("min-h-20", errors.projectDescription && "border-red-500")} />
+                {errors.projectDescription && <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
                     {errors.projectDescription}
-                  </p>
-                )}
+                  </p>}
               </div>
 
               {/* Dates */}
@@ -386,25 +348,18 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   <Label>Data de Início</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {projectData.startDate ? (
-                          format(projectData.startDate, "PPP", { locale: ptBR })
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
+                        {projectData.startDate ? format(projectData.startDate, "PPP", {
+                        locale: ptBR
+                      }) : <span>Selecione uma data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={projectData.startDate}
-                        onSelect={(date) => setProjectData(prev => ({ ...prev, startDate: date }))}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={projectData.startDate} onSelect={date => setProjectData(prev => ({
+                      ...prev,
+                      startDate: date
+                    }))} initialFocus />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -417,41 +372,30 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                   </Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !projectData.deadline && "text-muted-foreground",
-                          errors.projectDeadline && "border-red-500"
-                        )}
-                      >
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !projectData.deadline && "text-muted-foreground", errors.projectDeadline && "border-red-500")}>
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        {projectData.deadline ? (
-                          format(projectData.deadline, "PPP", { locale: ptBR })
-                        ) : (
-                          <span>Selecione uma data</span>
-                        )}
+                        {projectData.deadline ? format(projectData.deadline, "PPP", {
+                        locale: ptBR
+                      }) : <span>Selecione uma data</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={projectData.deadline}
-                        onSelect={(date) => {
-                          setProjectData(prev => ({ ...prev, deadline: date }));
-                          if (errors.projectDeadline) setErrors(prev => ({ ...prev, projectDeadline: "" }));
-                        }}
-                        disabled={(date) => projectData.startDate ? date <= projectData.startDate : date < new Date()}
-                        initialFocus
-                      />
+                      <Calendar mode="single" selected={projectData.deadline} onSelect={date => {
+                      setProjectData(prev => ({
+                        ...prev,
+                        deadline: date
+                      }));
+                      if (errors.projectDeadline) setErrors(prev => ({
+                        ...prev,
+                        projectDeadline: ""
+                      }));
+                    }} disabled={date => projectData.startDate ? date <= projectData.startDate : date < new Date()} initialFocus />
                     </PopoverContent>
                   </Popover>
-                  {errors.projectDeadline && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
+                  {errors.projectDeadline && <p className="text-sm text-red-500 flex items-center gap-1">
                       <AlertCircle className="h-4 w-4" />
                       {errors.projectDeadline}
-                    </p>
-                  )}
+                    </p>}
                 </div>
               </div>
 
@@ -461,46 +405,36 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
                 <div className="space-y-2">
                   <Label>Prioridade</Label>
                   <div className="flex gap-2">
-                    {priorityOptions.map((option) => (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        variant={projectData.priority === option.value ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setProjectData(prev => ({ ...prev, priority: option.value as any }))}
-                        className="flex-1"
-                      >
+                    {priorityOptions.map(option => <Button key={option.value} type="button" variant={projectData.priority === option.value ? "default" : "outline"} size="sm" onClick={() => setProjectData(prev => ({
+                    ...prev,
+                    priority: option.value as any
+                  }))} className="flex-1">
                         {option.label}
-                      </Button>
-                    ))}
+                      </Button>)}
                   </div>
                 </div>
 
                 {/* Status */}
                 <div className="space-y-2">
                   <Label>Status Inicial</Label>
-                  <Select
-                    value={projectData.status}
-                    onValueChange={(value) => setProjectData(prev => ({ ...prev, status: value as any }))}
-                  >
+                  <Select value={projectData.status} onValueChange={value => setProjectData(prev => ({
+                  ...prev,
+                  status: value as any
+                }))}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {statusOptions.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
+                      {statusOptions.map(status => <SelectItem key={status.value} value={status.value}>
                           {status.label}
-                        </SelectItem>
-                      ))}
+                        </SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               {/* Tags */}
-              <div className="space-y-2">
-...
-              </div>
+              
             </div>
           </TabsContent>
 
@@ -510,26 +444,22 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
 
               {/* Multiple Team Selection */}
               <div className="space-y-2">
-                <MultiTeamSelector
-                  teams={teams.map(t => ({ 
-                    id: t.id, 
-                    name: t.name,
-                    color: '#3B82F6',
-                    memberCount: t.members?.length || 0
-                  }))}
-                  selectedTeamIds={selectedTeamIds}
-                  onSelectionChange={(teamIds) => {
-                    setSelectedTeamIds(teamIds);
-                    if (errors.existingTeam) setErrors(prev => ({ ...prev, existingTeam: "" }));
-                  }}
-                  placeholder="Selecione aqui suas equipes"
-                />
-                {errors.existingTeam && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
+                <MultiTeamSelector teams={teams.map(t => ({
+                id: t.id,
+                name: t.name,
+                color: '#3B82F6',
+                memberCount: t.members?.length || 0
+              }))} selectedTeamIds={selectedTeamIds} onSelectionChange={teamIds => {
+                setSelectedTeamIds(teamIds);
+                if (errors.existingTeam) setErrors(prev => ({
+                  ...prev,
+                  existingTeam: ""
+                }));
+              }} placeholder="Selecione aqui suas equipes" />
+                {errors.existingTeam && <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
                     {errors.existingTeam}
-                  </p>
-                )}
+                  </p>}
               </div>
             </div>
           </TabsContent>
@@ -543,33 +473,20 @@ export default function CreateProjectModal({ open, onOpenChange }: CreateProject
           </div>
           
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="gap-2"
-            >
-              {isLoading ? (
-                <>
+            <Button onClick={handleSubmit} disabled={isLoading} className="gap-2">
+              {isLoading ? <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Criando...
-                </>
-              ) : (
-                <>
+                </> : <>
                   <CheckCircle2 className="w-4 h-4" />
                   Criar Projeto
-                </>
-              )}
+                </>}
             </Button>
           </div>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
