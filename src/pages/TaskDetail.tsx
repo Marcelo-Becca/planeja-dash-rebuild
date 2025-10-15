@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, Calendar, User, CheckCircle2, Clock, AlertTriangle, MessageSquare, Plus, Settings, Trash2, Archive, Play, Pause, Flag, X, Pencil } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
+import { useTasks } from '@/hooks/useTasks';
+import { useProjects } from '@/hooks/useProjects';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
@@ -68,23 +70,13 @@ const priorityOptions = [{
   dot: 'bg-red-500'
 }];
 export default function TaskDetail() {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    tasks,
-    projects,
-    updateTask,
-    deleteTask,
-    users
-  } = useLocalData();
-  const {
-    showUndoToast
-  } = useUndoToast();
-  const {
-    user: currentUser
-  } = useAuth();
+  const { tasks, loading: tasksLoading, updateTask, deleteTask } = useTasks();
+  const { projects } = useProjects();
+  const { users } = useLocalData();
+  const { showUndoToast } = useUndoToast();
+  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [newComment, setNewComment] = useState('');
   const [progress, setProgress] = useState(0);
@@ -118,7 +110,20 @@ export default function TaskDetail() {
     createdAt: Date;
   }>>([]);
   const task = tasks.find(t => t.id === id);
-  const project = task ? projects.find(p => p.id === task.projectId) : null;
+  const project = task?.project_id ? projects.find(p => p.id === task.project_id) : null;
+
+  if (tasksLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando tarefa...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
   useEffect(() => {
     if (task) {
       // Calculate progress based on subtasks
@@ -148,18 +153,15 @@ export default function TaskDetail() {
       </Layout>;
   }
   const statusConfig = statusOptions.find(s => s.value === task.status) || statusOptions[0];
-  const priorityConfig = priorityOptions.find(p => p.value === task.priority) || priorityOptions[0];
+  const priorityConfig = priorityOptions.find(p => p.value === task.priority) || priorityOptions[1];
   const StatusIcon = statusConfig.icon;
-  const isOverdue = new Date(task.deadline) < new Date() && task.status !== 'completed';
-  const handleUpdateTask = (updates: any) => {
-    const originalData = {
-      ...task
-    };
-    updateTask(task.id, updates);
-    showUndoToast('Tarefa atualizada', {
-      message: 'As alterações foram salvas',
-      undo: () => updateTask(task.id, originalData)
-    });
+  const isOverdue = new Date(task.due_date) < new Date() && task.status !== 'completed';
+  const handleUpdateTask = async (updates: any) => {
+    try {
+      await updateTask(task.id, updates);
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
   };
   const handleStatusChange = (newStatus: string) => {
     handleUpdateTask({
@@ -252,10 +254,14 @@ export default function TaskDetail() {
     if (diffInDays < 7) return `há ${diffInDays} dia${diffInDays > 1 ? 's' : ''}`;
     return date.toLocaleDateString('pt-BR');
   };
-  const handleDeleteTask = () => {
+  const handleDeleteTask = async () => {
     if (window.confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.')) {
-      deleteTask(task.id);
-      navigate('/tasks');
+      try {
+        await deleteTask(task.id);
+        navigate('/tasks');
+      } catch (error) {
+        console.error('Error deleting task:', error);
+      }
     }
   };
   return <Layout>
@@ -275,7 +281,7 @@ export default function TaskDetail() {
                 title: newTitle
               })} className="mb-1" displayClassName="text-xl md:text-2xl font-semibold text-foreground" validation={value => value.length > 100 ? 'Título muito longo (max 100 caracteres)' : null} required />
                 <p className="text-muted-foreground text-sm">
-                  Criada por {task.createdBy?.name || 'Sistema'} em {new Date(task.createdAt).toLocaleDateString('pt-BR')}
+                  Criada em {new Date(task.created_at).toLocaleDateString('pt-BR')}
                 </p>
               </div>
             </div>
@@ -344,7 +350,7 @@ export default function TaskDetail() {
                           <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
                           <span className="text-muted-foreground mr-2">Prazo:</span>
                           <span className={cn("font-medium", isOverdue ? "text-red-400" : "text-foreground")}>
-                            {new Date(task.deadline).toLocaleDateString('pt-BR')}
+                            {new Date(task.due_date).toLocaleDateString('pt-BR')}
                           </span>
                         </div>
                         
@@ -352,7 +358,7 @@ export default function TaskDetail() {
                           <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
                           <span className="text-muted-foreground mr-2">Criada em:</span>
                           <span className="text-foreground font-medium">
-                            {new Date(task.createdAt).toLocaleDateString('pt-BR')}
+                            {new Date(task.created_at).toLocaleDateString('pt-BR')}
                           </span>
                         </div>
                       </div>
@@ -372,53 +378,32 @@ export default function TaskDetail() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {task.assignedTo?.map(user => <div key={user.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
-                            <Avatar className="w-10 h-10 mr-3">
-                              <AvatarFallback className="bg-primary/10 text-primary">
-                                {user.avatar}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">
-                                {user.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground truncate">
-                                {user.role}
-                              </p>
+                        {task.assignees && task.assignees.length > 0 ? (
+                          task.assignees.map(user => (
+                            <div key={user.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
+                              <Avatar className="w-10 h-10 mr-3">
+                                <AvatarFallback className="bg-primary/10 text-primary">
+                                  {user.name.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {user.name}
+                                </p>
+                              </div>
                             </div>
-                          </div>) || <div className="text-center py-4">
+                          ))
+                        ) : (
+                          <div className="text-center py-4">
                             <User className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                             <p className="text-sm text-muted-foreground">
                               Nenhum responsável atribuído
                             </p>
-                          </div>}
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* Creator Info */}
-                  {task.createdBy && <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Criador</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex items-center p-3 bg-muted/30 rounded-lg">
-                          <Avatar className="w-10 h-10 mr-3">
-                            <AvatarFallback className="bg-primary/10 text-primary">
-                              {task.createdBy.avatar}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {task.createdBy.name}
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {task.createdBy.role}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>}
                 </div>
               </div>
             </TabsContent>
