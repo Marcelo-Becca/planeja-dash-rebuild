@@ -19,6 +19,7 @@ import { ProgressSlider } from '@/components/ProgressSlider';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 const statusOptions = [{
   value: 'pending',
   label: 'Pendente',
@@ -80,23 +81,11 @@ export default function TaskDetail() {
   const [activeTab, setActiveTab] = useState('overview');
   const [newComment, setNewComment] = useState('');
   const [progress, setProgress] = useState(0);
-  const [subtasks, setSubtasks] = useState([{
-    id: '1',
-    text: 'Análise inicial',
-    completed: false
-  }, {
-    id: '2',
-    text: 'Desenvolvimento',
-    completed: false
-  }, {
-    id: '3',
-    text: 'Testes',
-    completed: false
-  }, {
-    id: '4',
-    text: 'Deploy',
-    completed: false
-  }]);
+  const [subtasks, setSubtasks] = useState<Array<{
+    id: string;
+    text: string;
+    completed: boolean;
+  }>>([]);
   const [newSubtaskText, setNewSubtaskText] = useState('');
   const [showSubtaskInput, setShowSubtaskInput] = useState(false);
   const [comments, setComments] = useState<Array<{
@@ -104,27 +93,133 @@ export default function TaskDetail() {
     text: string;
     author: {
       name: string;
-      avatar: string;
+      avatar: string | null;
       role: string;
     };
     createdAt: Date;
   }>>([]);
+  const [loadingSubtasks, setLoadingSubtasks] = useState(true);
+  const [loadingComments, setLoadingComments] = useState(true);
   
   const task = tasks.find(t => t.id === id);
   const project = task?.project_id ? projects.find(p => p.id === task.project_id) : null;
 
-  // Move useEffect before any conditional returns
+  // Fetch subtasks and comments from database
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchSubtasks = async () => {
+      try {
+        setLoadingSubtasks(true);
+        const { data, error } = await supabase
+          .from('task_subtasks')
+          .select('*')
+          .eq('task_id', id)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setSubtasks(data || []);
+      } catch (error: any) {
+        console.error('Error fetching subtasks:', error);
+      } finally {
+        setLoadingSubtasks(false);
+      }
+    };
+
+    const fetchComments = async () => {
+      try {
+        setLoadingComments(true);
+        const { data, error } = await supabase
+          .from('task_comments')
+          .select('*')
+          .eq('task_id', id)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        // Fetch profiles separately
+        if (data && data.length > 0) {
+          const authorIds = [...new Set(data.map(c => c.author_id))];
+          const { data: profiles, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, name, avatar, role')
+            .in('id', authorIds);
+
+          if (profilesError) throw profilesError;
+
+          const formattedComments = data.map(comment => {
+            const author = profiles?.find(p => p.id === comment.author_id);
+            return {
+              id: comment.id,
+              text: comment.text,
+              author: {
+                name: author?.name || 'Usuário',
+                avatar: author?.avatar || null,
+                role: author?.role || 'Membro'
+              },
+              createdAt: new Date(comment.created_at)
+            };
+          });
+          
+          setComments(formattedComments);
+        } else {
+          setComments([]);
+        }
+      } catch (error: any) {
+        console.error('Error fetching comments:', error);
+      } finally {
+        setLoadingComments(false);
+      }
+    };
+
+    fetchSubtasks();
+    fetchComments();
+
+    // Subscribe to real-time changes
+    const subtasksChannel = supabase
+      .channel('task-subtasks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_subtasks',
+          filter: `task_id=eq.${id}`
+        },
+        () => {
+          fetchSubtasks();
+        }
+      )
+      .subscribe();
+
+    const commentsChannel = supabase
+      .channel('task-comments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_comments',
+          filter: `task_id=eq.${id}`
+        },
+        () => {
+          fetchComments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subtasksChannel);
+      supabase.removeChannel(commentsChannel);
+    };
+  }, [id]);
+
+  // Calculate progress based on subtasks
   useEffect(() => {
     if (task) {
-      // Calculate progress based on subtasks
       const completedSubtasks = subtasks.filter(st => st.completed).length;
       const calculatedProgress = subtasks.length > 0 ? Math.round(completedSubtasks / subtasks.length * 100) : 0;
       setProgress(calculatedProgress);
-
-      // Auto-suggest task completion when all subtasks are done
-      if (calculatedProgress === 100 && task.status !== 'completed') {
-        // Could show a suggestion toast here
-      }
     }
   }, [subtasks, task]);
 
@@ -180,69 +275,102 @@ export default function TaskDetail() {
       completedAt: new Date().toISOString()
     });
   };
-  const handleSubtaskToggle = (subtaskId: string) => {
-    setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
-      ...st,
-      completed: !st.completed
-    } : st));
-  };
+  const handleSubtaskToggle = async (subtaskId: string) => {
+    const subtask = subtasks.find(st => st.id === subtaskId);
+    if (!subtask) return;
 
-  const handleEditSubtask = (subtaskId: string, newText: string) => {
-    const previousSubtasks = [...subtasks];
-    setSubtasks(prev => prev.map(st => st.id === subtaskId ? {
-      ...st,
-      text: newText
-    } : st));
-    showUndoToast('Subtarefa atualizada', {
-      message: 'O nome da subtarefa foi alterado',
-      undo: () => setSubtasks(previousSubtasks)
-    });
-  };
+    try {
+      const { error } = await supabase
+        .from('task_subtasks')
+        .update({ completed: !subtask.completed })
+        .eq('id', subtaskId);
 
-  const handleDeleteSubtask = (subtaskId: string) => {
-    const subtaskToDelete = subtasks.find(st => st.id === subtaskId);
-    if (subtaskToDelete) {
-      setSubtasks(prev => prev.filter(st => st.id !== subtaskId));
-      showUndoToast('Subtarefa excluída', {
-        message: 'A subtarefa foi removida',
-        undo: () => setSubtasks(prev => [...prev, subtaskToDelete])
-      });
+      if (error) throw error;
+    } catch (error: any) {
+      console.error('Error updating subtask:', error);
     }
   };
-  const handleAddSubtask = () => {
-    if (newSubtaskText.trim()) {
-      const newSubtask = {
-        id: Date.now().toString(),
-        text: newSubtaskText.trim(),
-        completed: false
-      };
-      setSubtasks(prev => [...prev, newSubtask]);
+
+  const handleEditSubtask = async (subtaskId: string, newText: string) => {
+    try {
+      const { error } = await supabase
+        .from('task_subtasks')
+        .update({ text: newText })
+        .eq('id', subtaskId);
+
+      if (error) throw error;
+
+      showUndoToast('Subtarefa atualizada', {
+        message: 'O nome da subtarefa foi alterado',
+        undo: async () => {}
+      });
+    } catch (error: any) {
+      console.error('Error updating subtask:', error);
+    }
+  };
+
+  const handleDeleteSubtask = async (subtaskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('task_subtasks')
+        .delete()
+        .eq('id', subtaskId);
+
+      if (error) throw error;
+
+      showUndoToast('Subtarefa excluída', {
+        message: 'A subtarefa foi removida',
+        undo: async () => {}
+      });
+    } catch (error: any) {
+      console.error('Error deleting subtask:', error);
+    }
+  };
+  const handleAddSubtask = async () => {
+    if (!newSubtaskText.trim() || !task) return;
+
+    try {
+      const { error } = await supabase
+        .from('task_subtasks')
+        .insert({
+          task_id: task.id,
+          text: newSubtaskText.trim(),
+          completed: false
+        });
+
+      if (error) throw error;
+
       setNewSubtaskText('');
       setShowSubtaskInput(false);
       showUndoToast('Subtarefa adicionada', {
         message: 'A subtarefa foi criada com sucesso',
-        undo: () => setSubtasks(prev => prev.filter(st => st.id !== newSubtask.id))
+        undo: async () => {}
       });
+    } catch (error: any) {
+      console.error('Error adding subtask:', error);
     }
   };
-  const handleAddComment = () => {
-    if (newComment.trim() && currentUser) {
-      const newCommentObj = {
-        id: Date.now().toString(),
-        text: newComment.trim(),
-        author: {
-          name: currentUser.name,
-          avatar: currentUser.avatar || currentUser.name.substring(0, 2).toUpperCase(),
-          role: currentUser.role || 'Membro'
-        },
-        createdAt: new Date()
-      };
-      setComments(prev => [...prev, newCommentObj]);
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !currentUser || !task) return;
+
+    try {
+      const { error } = await supabase
+        .from('task_comments')
+        .insert({
+          task_id: task.id,
+          text: newComment.trim(),
+          author_id: currentUser.id
+        });
+
+      if (error) throw error;
+
       setNewComment('');
       showUndoToast('Comentário adicionado', {
         message: 'Seu comentário foi salvo',
-        undo: () => setComments(prev => prev.filter(c => c.id !== newCommentObj.id))
+        undo: async () => {}
       });
+    } catch (error: any) {
+      console.error('Error adding comment:', error);
     }
   };
   const getRelativeTime = (date: Date) => {
