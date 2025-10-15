@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Project, Task, Team, User } from '@/data/mockData';
-import { testUsers } from '@/data/testUsers';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 // Types for local storage
 interface LocalStorageData {
@@ -20,13 +20,7 @@ const getInitialData = (): LocalStorageData => ({
   projects: [],
   tasks: [],
   teams: [],
-  users: testUsers.map(tu => ({
-    id: tu.id,
-    name: tu.name,
-    email: tu.email,
-    avatar: tu.avatar || tu.name.split(' ').map(n => n[0]).join(''),
-    role: tu.role
-  })), // Always include test users as regular Users
+  users: [],
   lastUpdate: new Date().toISOString()
 });
 
@@ -75,6 +69,59 @@ export function useLocalData() {
   const [data, setData] = useState<LocalStorageData>(() => 
     user ? loadData(user.id) : getInitialData()
   );
+
+  // Fetch real users from Supabase profiles table
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('id, name, display_name, avatar, role')
+        .order('name');
+
+      if (error) {
+        console.error('Erro ao buscar usuários:', error);
+        return;
+      }
+
+      if (profiles) {
+        const users: User[] = profiles.map(profile => ({
+          id: profile.id,
+          name: profile.name,
+          email: '', // Email is not stored in profiles for privacy
+          avatar: profile.avatar || profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2),
+          role: profile.role || 'Membro'
+        }));
+
+        setData(prev => ({
+          ...prev,
+          users
+        }));
+      }
+    };
+
+    fetchUsers();
+
+    // Set up realtime subscription for profile changes
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          // Refetch users when any change occurs
+          fetchUsers();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Save to localStorage whenever data changes (only if user is logged in)
   // useEffect removed to prevent infinite re-renders, data is saved on each mutation instead
