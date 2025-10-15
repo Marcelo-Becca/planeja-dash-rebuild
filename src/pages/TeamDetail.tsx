@@ -31,6 +31,7 @@ import {
   Trash2,
   Target
 } from 'lucide-react';
+import { useTeams } from '@/hooks/useTeams';
 import { useLocalData } from '@/hooks/useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
 import { InlineEdit } from '@/components/InlineEdit';
@@ -48,7 +49,8 @@ const statusOptions = [
 export default function TeamDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { teams, tasks, projects, updateTeam, deleteTeam, users } = useLocalData();
+  const { teams, updateTeam, deleteTeam } = useTeams();
+  const { tasks, projects, users } = useLocalData();
   const { user } = useAuth();
   const { showUndoToast } = useUndoToast();
   const [activeTab, setActiveTab] = useState('overview');
@@ -56,17 +58,21 @@ export default function TeamDetail() {
 
   const team = teams.find(t => t.id === id);
   
+  // Get team members
+  const teamMembers = users.filter(user => team?.members?.includes(user.id));
+  const teamLeader = users.find(user => user.id === team?.leader_id);
+
   // Get tasks associated with team members
   const teamTasks = tasks.filter(task => 
-    task.assignedTo?.some(user => 
-      team?.members?.some(member => member.user?.id === user.id)
+    task.assignedTo?.some(assignedUser => 
+      team?.members?.includes(assignedUser.id)
     )
   );
 
   // Get projects associated with the team
   const teamProjects = projects.filter(project =>
     project.team?.some(member => 
-      team?.members?.some(tmember => tmember.user?.id === member.id)
+      team?.members?.includes(member.id)
     )
   );
 
@@ -96,73 +102,35 @@ export default function TeamDetail() {
     );
   }
 
-  const statusConfig = statusOptions.find(s => s.value === team.status) || statusOptions[0];
-
-  const handleUpdateTeam = (updates: any) => {
-    const originalData = { ...team };
-    updateTeam(team.id, updates);
-    
-    showUndoToast('Equipe atualizada', {
-      message: 'As alterações foram salvas',
-      undo: () => updateTeam(team.id, originalData)
-    });
+  const handleUpdateTeam = async (updates: any) => {
+    await updateTeam(team.id, updates);
   };
 
-  const handleDeleteTeam = () => {
+  const handleDeleteTeam = async () => {
     if (window.confirm('Tem certeza que deseja excluir esta equipe? Esta ação não pode ser desfeita.')) {
-      deleteTeam(team.id);
+      await deleteTeam(team.id);
       navigate('/teams');
     }
   };
 
-  const handleRemoveMember = (memberId: string) => {
+  const handleRemoveMember = async (userId: string) => {
     if (window.confirm('Tem certeza que deseja remover este membro da equipe?')) {
-      const updatedMembers = team.members?.filter(m => m.id !== memberId) || [];
-      handleUpdateTeam({ members: updatedMembers });
+      const updatedMembers = team.members?.filter(id => id !== userId) || [];
+      await handleUpdateTeam({ members: updatedMembers });
     }
   };
 
-  const handleMakeLeader = (memberId: string) => {
-    const member = team.members?.find(m => m.id === memberId);
-    if (!member) return;
-
-    if (window.confirm(`Deseja tornar ${member.user?.name} o líder da equipe?`)) {
-      const updatedMembers = team.members?.map(m => ({
-        ...m,
-        role: m.id === memberId ? 'leader' : m.role === 'leader' ? 'member' : m.role
-      })) || [];
-      
-      handleUpdateTeam({ 
-        members: updatedMembers,
-        leader: member.user
-      });
-    }
-  };
-
-  const handleAddMembers = () => {
+  const handleAddMembers = async () => {
     if (selectedNewMembers.length === 0) return;
 
     const currentMembers = team.members || [];
-    const newMembers = selectedNewMembers
-      .filter(userId => !currentMembers.some(m => m.user?.id === userId))
-      .map(userId => {
-        const user = users.find(u => u.id === userId);
-        return {
-          id: `${Date.now()}-${Math.random().toString(36).substring(7)}`,
-          user: user,
-          role: 'member' as const,
-          joinedAt: new Date(),
-          tasksCount: 0
-        };
-      });
+    const newMembers = selectedNewMembers.filter(userId => 
+      !currentMembers.includes(userId)
+    );
 
     if (newMembers.length > 0) {
-      handleUpdateTeam({ members: [...currentMembers, ...newMembers] });
+      await handleUpdateTeam({ members: [...currentMembers, ...newMembers] });
       setSelectedNewMembers([]);
-      showUndoToast('Membros adicionados', {
-        message: `${newMembers.length} membro${newMembers.length > 1 ? 's' : ''} adicionado${newMembers.length > 1 ? 's' : ''} à equipe`,
-        undo: () => handleUpdateTeam({ members: currentMembers })
-      });
     }
   };
 
@@ -211,22 +179,6 @@ export default function TeamDetail() {
                     validation={(value) => value.length > 50 ? 'Nome muito longo (max 50 caracteres)' : null}
                     required
                   />
-                  <select 
-                    value={team.status}
-                    onChange={(e) => handleUpdateTeam({ status: e.target.value })}
-                    className={cn(
-                      "px-3 py-1 rounded-lg text-sm font-medium border cursor-pointer",
-                      statusConfig.color,
-                      statusConfig.bg,
-                      "border-current/20 bg-current/5"
-                    )}
-                  >
-                    {statusOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
                 </div>
                 <InlineEdit
                   value={team.description || ''}
@@ -257,11 +209,10 @@ export default function TeamDetail() {
       <div className="flex-1 px-4 md:px-6 py-4 md:py-6 overflow-y-auto">
         <div className="max-w-6xl mx-auto space-y-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-fit">
+            <TabsList className="grid w-full grid-cols-3 lg:w-fit">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="members">Membros ({team.members?.length || 0})</TabsTrigger>
+              <TabsTrigger value="members">Membros ({teamMembers.length})</TabsTrigger>
               <TabsTrigger value="tasks">Tarefas ({teamTasks.length})</TabsTrigger>
-              <TabsTrigger value="settings">Configurações</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -276,10 +227,10 @@ export default function TeamDetail() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2">Objetivo</h4>
+                      <h4 className="font-medium mb-2">Objetivo Principal</h4>
                       <InlineEdit
-                        value={team.objective || ''}
-                        onSave={(newObjective) => handleUpdateTeam({ objective: newObjective })}
+                        value={team.main_objective || ''}
+                        onSave={(newObjective) => handleUpdateTeam({ main_objective: newObjective })}
                         multiline
                         placeholder="Adicione o objetivo da equipe..."
                         displayClassName="text-sm text-muted-foreground"
@@ -289,7 +240,7 @@ export default function TeamDetail() {
                     <div className="grid grid-cols-2 gap-4 text-sm pt-4 border-t border-border">
                       <div>
                         <span className="text-muted-foreground">Membros</span>
-                        <p className="font-medium">{team.members?.length || 0}</p>
+                        <p className="font-medium">{teamMembers.length}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Projetos</span>
@@ -297,11 +248,11 @@ export default function TeamDetail() {
                       </div>
                       <div>
                         <span className="text-muted-foreground">Criada em</span>
-                        <p className="font-medium">{new Date(team.createdAt).toLocaleDateString('pt-BR')}</p>
+                        <p className="font-medium">{new Date(team.created_at).toLocaleDateString('pt-BR')}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Líder</span>
-                        <p className="font-medium">{team.leader?.name || 'Não definido'}</p>
+                        <p className="font-medium">{teamLeader?.name || 'Não definido'}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -385,7 +336,7 @@ export default function TeamDetail() {
             <TabsContent value="members" className="space-y-6">
               <Card>
                 <CardHeader className="flex flex-col space-y-4">
-                  <CardTitle>Membros da Equipe ({team.members?.length || 0})</CardTitle>
+                  <CardTitle>Membros da Equipe ({teamMembers.length})</CardTitle>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="flex-1">
                       <MultiUserSelector
@@ -407,71 +358,62 @@ export default function TeamDetail() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {team.members?.map((member) => (
+                    {teamMembers.map((member) => (
                       <div key={member.id} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12">
                             <AvatarFallback className="bg-primary/10 text-primary">
-                              {member.user?.avatar}
+                              {member.avatar}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h4 className="font-medium">{member.user?.name}</h4>
-                              {member.role === 'leader' && (
+                              <h4 className="font-medium">{member.name}</h4>
+                              {member.id === team.leader_id && (
                                 <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
                                   <Crown className="mr-1 h-3 w-3" />
                                   Líder
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">{member.user?.role}</p>
-                            <div className="flex items-center gap-4 mt-1">
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {member.user?.email}
-                              </span>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                Desde {new Date(member.joinedAt).toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
+                            <p className="text-sm text-muted-foreground">{member.role}</p>
+                            {member.email && (
+                              <div className="flex items-center gap-4 mt-1">
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Mail className="h-3 w-3" />
+                                  {member.email}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <p className="text-sm font-medium">{member.tasksCount || 0} tarefas</p>
-                            <p className="text-xs text-muted-foreground">Em andamento</p>
-                          </div>
-                          
+                        {member.id !== team.leader_id && (
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="sm">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleMakeLeader(member.id)}>
-                                <Crown className="mr-2 h-4 w-4" />
-                                Tornar Líder
-                              </DropdownMenuItem>
                               <DropdownMenuItem 
-                                className="text-destructive"
                                 onClick={() => handleRemoveMember(member.id)}
+                                className="text-destructive"
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                Remover da Equipe
+                                Remover
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </div>
+                        )}
                       </div>
-                    )) || (
+                    ))}
+                    
+                    {teamMembers.length === 0 && (
                       <div className="text-center py-8">
                         <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                         <p className="text-muted-foreground">
-                          Nenhum membro na equipe ainda
+                          Nenhum membro nesta equipe ainda.
                         </p>
                       </div>
                     )}
@@ -538,43 +480,6 @@ export default function TeamDetail() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="h-5 w-5" />
-                    Configurações da Equipe
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleUpdateTeam({ status: 'archived' })}
-                      className="gap-2"
-                    >
-                      <Archive className="w-4 h-4" />
-                      Arquivar Equipe
-                    </Button>
-                  </div>
-
-                  <div className="pt-6 border-t border-destructive/20">
-                    <h4 className="font-medium text-destructive mb-3">Zona de Perigo</h4>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleDeleteTeam}
-                      className="gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Excluir Equipe
-                    </Button>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Esta ação não pode ser desfeita. Todos os dados da equipe serão removidos permanentemente.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         </div>
       </div>
