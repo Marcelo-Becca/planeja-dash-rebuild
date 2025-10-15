@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, Plus, X, AlertCircle, Flag, User, CheckSquare, Save, Undo2 } from "lucide-react";
-import { mockProjects, mockUsers } from "@/data/mockData";
+import { useProjects } from "@/hooks/useProjects";
+import { useTasks } from "@/hooks/useTasks";
 import { useLocalData } from "@/hooks/useLocalData";
 interface CreateTaskModalProps {
   open: boolean;
@@ -65,14 +66,10 @@ export default function CreateTaskModal({
   onOpenChange,
   preselectedProjectId
 }: CreateTaskModalProps) {
-  const {
-    toast
-  } = useToast();
-  const {
-    projects,
-    users,
-    addTask
-  } = useLocalData();
+  const { toast } = useToast();
+  const { projects } = useProjects();
+  const { createTask } = useTasks();
+  const { users } = useLocalData();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<TaskFormData>({
@@ -108,46 +105,22 @@ export default function CreateTaskModal({
     }
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Create task with local data
-      const assignedUsers = users.filter(u => formData.assigneeIds.includes(u.id));
-      const createdBy = users[0]; // Use first user as creator for demo
-
-      const newTask = addTask({
+      await createTask({
         title: formData.title,
         description: formData.description,
-        status: formData.status as any,
+        project_id: formData.projectId === 'independent' ? null : formData.projectId,
         priority: formData.priority,
-        deadline: formData.dueDate!,
-        createdAt: new Date(),
-        createdBy,
-        assignedTo: assignedUsers,
-        projectId: formData.projectId || 'independent',
-        comments: [],
-        subtasks: formData.subtasks
+        status: formData.status,
+        due_date: formData.dueDate!,
+        assignee_ids: formData.assigneeIds
       });
-      toast({
-        title: "Tarefa criada com sucesso!",
-        description: `A tarefa "${formData.title}" foi adicionada à sua lista.`,
-        action: saveAndCreate ? undefined : <Button variant="outline" size="sm" onClick={() => {
-          toast({
-            title: "Ação desfeita",
-            description: "Tarefa removida (simulação)"
-          });
-        }} className="gap-1">
-            <Undo2 className="w-3 h-3" />
-            Desfazer
-          </Button>
-      });
+
       if (saveAndCreate) {
         // Reset form for new task
         setFormData({
           title: "",
           description: "",
-          projectId: formData.projectId,
-          // Keep project selected
+          projectId: formData.projectId, // Keep project selected
           assigneeIds: [],
           priority: "medium",
           status: "pending",
@@ -159,11 +132,7 @@ export default function CreateTaskModal({
         onOpenChange(false);
       }
     } catch (error) {
-      toast({
-        title: "Erro ao criar tarefa",
-        description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive"
-      });
+      // Error is already handled in the hook
     } finally {
       setIsLoading(false);
     }

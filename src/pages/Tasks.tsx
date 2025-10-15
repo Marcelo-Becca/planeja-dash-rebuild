@@ -4,11 +4,12 @@ import CreateTaskModal from "@/components/CreateTaskModal";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search, CheckSquare } from "lucide-react";
+import { useTasks } from "@/hooks/useTasks";
 import { useLocalData } from "@/hooks/useLocalData";
 import { useState } from "react";
 
 export default function Tasks() {
-  const { tasks } = useLocalData();
+  const { tasks, loading } = useTasks();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
@@ -22,6 +23,19 @@ export default function Tasks() {
     
     return matchesSearch && matchesStatus && matchesPriority;
   });
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Carregando tarefas...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

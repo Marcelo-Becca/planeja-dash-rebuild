@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Calendar, AlertTriangle, CheckCircle2, Clock, User } from "lucide-react";
-import { Task } from "@/data/mockData";
+import { Task } from "@/hooks/useTasks";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
@@ -57,6 +57,10 @@ const priorityConfig = {
   high: {
     label: "Alta",
     color: "text-chart-overdue"
+  },
+  urgent: {
+    label: "Urgente",
+    color: "text-chart-overdue"
   }
 };
 
@@ -64,7 +68,8 @@ export default function TaskCard({ task }: TaskCardProps) {
   const status = statusConfig[task.status];
   const priority = priorityConfig[task.priority];
   const StatusIcon = status.icon;
-  const isOverdue = task.deadline < new Date() && task.status !== 'completed';
+  const dueDate = new Date(task.due_date);
+  const isOverdue = dueDate < new Date() && task.status !== 'completed';
 
   return (
     <Link 
@@ -104,7 +109,7 @@ export default function TaskCard({ task }: TaskCardProps) {
               <div className={cn("w-2 h-2 rounded-full mr-2", {
                 "bg-chart-completed": task.priority === 'low',
                 "bg-chart-pending": task.priority === 'medium', 
-                "bg-chart-overdue": task.priority === 'high'
+                "bg-chart-overdue": task.priority === 'high' || task.priority === 'urgent'
               })} />
               <span className="text-xs text-muted-foreground">
                 Prioridade {priority.label}
@@ -117,7 +122,7 @@ export default function TaskCard({ task }: TaskCardProps) {
             <span className={cn(
               isOverdue && "text-chart-overdue font-medium"
             )}>
-              {task.deadline.toLocaleDateString('pt-BR')}
+              {dueDate.toLocaleDateString('pt-BR')}
             </span>
           </div>
         </div>
@@ -127,27 +132,29 @@ export default function TaskCard({ task }: TaskCardProps) {
           <div className="flex items-center text-xs text-muted-foreground">
             <User className="w-3 h-3 mr-1" />
             <span>
-              {task.assignedTo.length === 1 
-                ? task.assignedTo[0].name
-                : `${task.assignedTo.length} responsáveis`
+              {task.assignees && task.assignees.length === 1 
+                ? task.assignees[0].name
+                : task.assignees && task.assignees.length > 0
+                ? `${task.assignees.length} responsáveis`
+                : "Nenhum responsável"
               }
             </span>
           </div>
 
           {/* Assigned Users Avatars */}
           <div className="flex -space-x-1">
-            {task.assignedTo.slice(0, 3).map((user) => (
+            {task.assignees && task.assignees.slice(0, 3).map((user) => (
               <div
                 key={user.id}
                 className="w-5 h-5 bg-gradient-brand rounded-full flex items-center justify-center text-xs font-medium text-sidebar-primary-foreground border border-card"
                 title={user.name}
               >
-                {user.avatar}
+                {user.name.charAt(0)}
               </div>
             ))}
-            {task.assignedTo.length > 3 && (
+            {task.assignees && task.assignees.length > 3 && (
               <div className="w-5 h-5 bg-muted rounded-full flex items-center justify-center text-xs font-medium text-muted-foreground border border-card">
-                +{task.assignedTo.length - 3}
+                +{task.assignees.length - 3}
               </div>
             )}
           </div>
