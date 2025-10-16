@@ -18,6 +18,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
+import MultiUserSelector from '@/components/MultiUserSelector';
 import { ProgressSlider } from '@/components/ProgressSlider';
 import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
@@ -352,6 +353,18 @@ export default function TaskDetail() {
       console.error('Error adding comment:', error);
     }
   };
+
+  const handleUpdateAssignees = async (newAssigneeIds: string[]) => {
+    try {
+      await updateTask(task.id, {}, newAssigneeIds);
+      showUndoToast('Responsáveis atualizados', {
+        message: 'A lista de responsáveis foi atualizada',
+        undo: async () => {}
+      });
+    } catch (error: any) {
+      console.error('Error updating assignees:', error);
+    }
+  };
   const getRelativeTime = (date: Date) => {
     const now = new Date();
     const diffInMs = now.getTime() - date.getTime();
@@ -495,23 +508,21 @@ export default function TaskDetail() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {task.assignees && task.assignees.length > 0 ? task.assignees.map(user => <div key={user.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
-                              <Avatar className="w-10 h-10 mr-3">
-                                <AvatarFallback className="bg-primary/10 text-primary">
-                                  {user.name.charAt(0)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">
-                                  {user.name}
-                                </p>
-                              </div>
-                            </div>) : <div className="text-center py-4">
+                        <MultiUserSelector
+                          selectedUsers={task.assignees?.map(a => a.id) || []}
+                          onSelectionChange={handleUpdateAssignees}
+                          placeholder="Adicionar responsáveis..."
+                          className="w-full"
+                        />
+                        
+                        {task.assignees && task.assignees.length === 0 && (
+                          <div className="text-center py-4">
                             <User className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                             <p className="text-sm text-muted-foreground">
                               Nenhum responsável atribuído
                             </p>
-                          </div>}
+                          </div>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
