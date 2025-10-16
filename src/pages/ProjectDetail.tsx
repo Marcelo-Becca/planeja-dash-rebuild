@@ -100,7 +100,6 @@ export default function ProjectDetail() {
   }
   const statusConfig = statusOptions.find(s => s.value === project.status) || statusOptions[0];
   const isOverdue = new Date(project.end_date) < new Date() && project.status !== 'completed';
-  const isLeader = user?.id === project.leader_id;
   const handleUpdateProject = async (updates: any) => {
     try {
       await updateProject(project.id, updates);
@@ -509,27 +508,13 @@ export default function ProjectDetail() {
 
                   <div className="pt-6 border-t border-destructive/20">
                     <h4 className="font-medium text-destructive mb-3">Zona de Perigo</h4>
-                    {isLeader ? (
-                      <>
-                        <Button variant="destructive" onClick={handleDeleteProject} className="gap-2">
-                          <Trash2 className="w-4 h-4" />
-                          Excluir Projeto
-                        </Button>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Esta ação não pode ser desfeita. Todas as tarefas relacionadas também serão removidas.
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <Button variant="destructive" disabled className="gap-2 opacity-60 cursor-not-allowed">
-                          <Trash2 className="w-4 h-4" />
-                          Excluir Projeto (apenas o líder)
-                        </Button>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Somente o líder do projeto pode excluir este projeto.
-                        </p>
-                      </>
-                    )}
+                    <Button variant="destructive" onClick={handleDeleteProject} className="gap-2">
+                      <Trash2 className="w-4 h-4" />
+                      Excluir Projeto
+                    </Button>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Esta ação não pode ser desfeita. Todas as tarefas relacionadas também serão removidas.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
