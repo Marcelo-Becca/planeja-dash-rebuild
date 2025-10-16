@@ -72,20 +72,16 @@ const Login = () => {
     setIsSubmitting(true);
     try {
       await login(formData.email, formData.password, formData.rememberMe);
-      // Não navega aqui - deixa o useEffect abaixo fazer isso
+      // Aguarda um momento para o estado do usuário ser atualizado
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 100);
     } catch (error) {
       // Erros já tratados no contexto
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  // Redirecionar automaticamente quando o usuário for autenticado
-  useEffect(() => {
-    if (user && !isLoading) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, isLoading, navigate]);
 
   // Dev mode quick fill handler
   useEffect(() => {
