@@ -65,8 +65,8 @@ const priorityConfig = {
 };
 
 export default function TaskCard({ task }: TaskCardProps) {
-  const status = statusConfig[task.status];
-  const priority = priorityConfig[task.priority];
+  const status = statusConfig[task.status as keyof typeof statusConfig] || statusConfig.pending;
+  const priority = priorityConfig[task.priority as keyof typeof priorityConfig] || priorityConfig.medium;
   const StatusIcon = status.icon;
   const dueDate = new Date(task.due_date);
   const isOverdue = dueDate < new Date() && task.status !== 'completed';
