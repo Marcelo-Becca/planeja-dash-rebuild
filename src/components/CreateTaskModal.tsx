@@ -18,6 +18,8 @@ import { Calendar as CalendarIcon, Plus, X, AlertCircle, Flag, User, CheckSquare
 import { useProjects } from "@/hooks/useProjects";
 import { useTasks } from "@/hooks/useTasks";
 import { useLocalData } from "@/hooks/useLocalData";
+import { useTeams } from "@/hooks/useTeams";
+import { MultiTeamSelector } from "@/components/MultiTeamSelector";
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -32,6 +34,7 @@ interface TaskFormData {
   title: string;
   description: string;
   projectId: string;
+  teamIds: string[];
   assigneeIds: string[];
   priority: "low" | "medium" | "high";
   status: "pending" | "in-progress" | "under-review";
@@ -70,12 +73,14 @@ export default function CreateTaskModal({
   const { projects } = useProjects();
   const { createTask } = useTasks();
   const { users } = useLocalData();
+  const { teams } = useTeams();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<TaskFormData>({
     title: "",
     description: "",
     projectId: preselectedProjectId || "",
+    teamIds: [],
     assigneeIds: [],
     priority: "medium",
     status: "pending",
@@ -109,6 +114,7 @@ export default function CreateTaskModal({
         title: formData.title,
         description: formData.description,
         project_id: formData.projectId === 'independent' ? null : formData.projectId,
+        team_id: formData.teamIds.length > 0 ? formData.teamIds[0] : null,
         priority: formData.priority,
         status: formData.status,
         due_date: formData.dueDate!,
@@ -121,6 +127,7 @@ export default function CreateTaskModal({
           title: "",
           description: "",
           projectId: formData.projectId, // Keep project selected
+          teamIds: formData.teamIds, // Keep teams selected
           assigneeIds: [],
           priority: "medium",
           status: "pending",
@@ -138,7 +145,7 @@ export default function CreateTaskModal({
     }
   };
   const handleCancel = () => {
-    const hasData = formData.title || formData.description || formData.assigneeIds.length > 0;
+    const hasData = formData.title || formData.description || formData.assigneeIds.length > 0 || formData.teamIds.length > 0;
     if (hasData) {
       if (confirm("Tem certeza que deseja cancelar? Todas as informações serão perdidas.")) {
         onOpenChange(false);
@@ -221,34 +228,56 @@ export default function CreateTaskModal({
           }))} className="min-h-20" />
           </div>
 
-          {/* Projeto e Responsável */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Projeto */}
-            <div className="space-y-2">
-              <Label>Projeto associado</Label>
-              <Select value={formData.projectId} onValueChange={value => setFormData(prev => ({
-              ...prev,
-              projectId: value
-            }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um projeto" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="independent">Tarefa independente</SelectItem>
-                  {projects.map(project => <SelectItem key={project.id} value={project.id}>
-                      {project.name}
-                    </SelectItem>)}
-                </SelectContent>
-              </Select>
-              {getSelectedProject() && <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="w-3 h-3 rounded-full bg-primary" />
-                  {getSelectedProject()?.name}
-                </div>}
-            </div>
+          {/* Projeto */}
+          <div className="space-y-2">
+            <Label>Projeto associado</Label>
+            <Select value={formData.projectId} onValueChange={value => setFormData(prev => ({
+            ...prev,
+            projectId: value
+          }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um projeto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="independent">Tarefa independente</SelectItem>
+                {projects.map(project => <SelectItem key={project.id} value={project.id}>
+                    {project.name}
+                  </SelectItem>)}
+              </SelectContent>
+            </Select>
+            {getSelectedProject() && <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-3 h-3 rounded-full bg-primary" />
+                {getSelectedProject()?.name}
+              </div>}
+          </div>
 
-            {/* Responsáveis */}
+          {/* Equipe */}
+          <div className="space-y-2">
+            <Label>Equipe responsável</Label>
+            <MultiTeamSelector
+              teams={teams.map(team => ({
+                id: team.id,
+                name: team.name,
+                memberCount: team.members?.length || 0
+              }))}
+              selectedTeamIds={formData.teamIds}
+              onSelectionChange={(teamIds) => {
+                // Limit to 1 team selection
+                const newTeamIds = teamIds.length > 1 ? [teamIds[teamIds.length - 1]] : teamIds;
+                setFormData(prev => ({
+                  ...prev,
+                  teamIds: newTeamIds
+                }));
+              }}
+              placeholder="Selecionar equipe..."
+            />
+          </div>
+
+          {/* Responsáveis Individuais */}
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+
             <div className="space-y-2">
-              <Label>Responsáveis</Label>
+              <Label>Responsáveis individuais</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-start">

@@ -7,12 +7,17 @@ export interface Task {
   title: string;
   description: string | null;
   project_id: string | null;
+  team_id: string | null;
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'pending' | 'in-progress' | 'completed' | 'overdue' | 'under-review';
   due_date: string;
   created_at: string;
   updated_at: string;
   project?: {
+    id: string;
+    name: string;
+  } | null;
+  team?: {
     id: string;
     name: string;
   } | null;
@@ -32,12 +37,13 @@ export function useTasks() {
     try {
       setLoading(true);
       
-      // Fetch tasks with project information
+      // Fetch tasks with project and team information
       const { data: tasksData, error: tasksError } = await supabase
         .from('tasks')
         .select(`
           *,
-          project:projects(id, name)
+          project:projects(id, name),
+          team:teams(id, name)
         `)
         .order('created_at', { ascending: false });
 
@@ -121,6 +127,7 @@ export function useTasks() {
     title: string;
     description: string;
     project_id: string | null;
+    team_id?: string | null;
     priority: 'low' | 'medium' | 'high' | 'urgent';
     status: 'pending' | 'in-progress' | 'completed' | 'overdue' | 'under-review';
     due_date: Date;
@@ -137,6 +144,7 @@ export function useTasks() {
           title: taskData.title,
           description: taskData.description,
           project_id: taskData.project_id,
+          team_id: taskData.team_id || null,
           priority: taskData.priority,
           status: taskData.status,
           due_date: taskData.due_date.toISOString().split('T')[0],
