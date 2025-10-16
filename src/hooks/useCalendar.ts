@@ -174,7 +174,8 @@ export function useCalendar() {
       }
 
       // Insert event (created_by é definido via DEFAULT auth.uid() no banco)
-      const { data: event, error: eventError } = await supabase
+      // Insert event without returning body to avoid SELECT RLS on RETURNING
+      const { error: eventError } = await supabase
         .from('calendar_events')
         .insert({
           title: eventData.title,
@@ -190,16 +191,29 @@ export function useCalendar() {
           priority: eventData.priority,
           color: eventData.color || null,
           status: eventData.status,
-        })
-        .select('id, title')
-        .single();
+        });
 
       if (eventError) throw eventError;
+
+      // Fetch the created event id (now SELECT RLS will pass because you created it)
+      const { data: createdEvent, error: findError } = await supabase
+        .from('calendar_events')
+        .select('id, title')
+        .eq('title', eventData.title)
+        .eq('start_date', eventData.startDate.toISOString())
+        .eq('end_date', eventData.endDate.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (findError || !createdEvent) throw findError || new Error('Evento criado, mas não foi possível recuperar o ID.');
+
+      const eventId = createdEvent.id;
 
       // Insert participants
       if (eventData.participants.length > 0) {
         const participantsToInsert = eventData.participants.map(userId => ({
-          event_id: event.id,
+          event_id: eventId,
           user_id: userId,
         }));
 
@@ -213,7 +227,7 @@ export function useCalendar() {
       // Insert reminders
       if (eventData.reminders.length > 0) {
         const remindersToInsert = eventData.reminders.map(reminder => ({
-          event_id: event.id,
+          event_id: eventId,
           minutes: reminder.minutes,
           triggered: false,
         }));
@@ -227,11 +241,11 @@ export function useCalendar() {
 
       toast({
         title: 'Evento criado',
-        description: `"${event.title}" foi adicionado ao calendário`,
+        description: `"${eventData.title}" foi adicionado ao calendário`,
       });
 
       await fetchEvents();
-      return event;
+      return { id: eventId, title: eventData.title } as any;
     } catch (error: any) {
       console.error('Error creating event:', error);
       toast({
