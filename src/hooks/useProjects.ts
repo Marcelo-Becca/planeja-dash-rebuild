@@ -244,11 +244,56 @@ export function useProjects() {
 
   const deleteProject = useCallback(async (projectId: string) => {
     try {
+      // Gather related task IDs for this project
+      const { data: taskIdsData, error: tasksSelectError } = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('project_id', projectId);
+
+      if (tasksSelectError) throw tasksSelectError;
+
+      const taskIds = (taskIdsData ?? []).map((t: { id: string }) => t.id);
+
+      // Delete task-related records first to avoid FK or RLS issues
+      if (taskIds.length > 0) {
+        const { error: delAssigneesError } = await supabase
+          .from('task_assignees')
+          .delete()
+          .in('task_id', taskIds);
+        if (delAssigneesError) throw delAssigneesError;
+
+        const { error: delCommentsError } = await supabase
+          .from('task_comments')
+          .delete()
+          .in('task_id', taskIds);
+        if (delCommentsError) throw delCommentsError;
+
+        const { error: delSubtasksError } = await supabase
+          .from('task_subtasks')
+          .delete()
+          .in('task_id', taskIds);
+        if (delSubtasksError) throw delSubtasksError;
+      }
+
+      // Delete tasks of this project
+      const { error: delTasksError } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('project_id', projectId);
+      if (delTasksError) throw delTasksError;
+
+      // Delete project-team relationships
+      const { error: delProjectTeamsError } = await supabase
+        .from('project_teams')
+        .delete()
+        .eq('project_id', projectId);
+      if (delProjectTeamsError) throw delProjectTeamsError;
+
+      // Finally, delete the project itself
       const { error } = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId);
-
       if (error) throw error;
 
       toast({
