@@ -256,16 +256,12 @@ export default function TaskDetail() {
   };
   const handleStatusChange = (newStatus: string) => {
     handleUpdateTask({
-      status: newStatus,
-      ...(newStatus === 'completed' && {
-        completedAt: new Date().toISOString()
-      })
+      status: newStatus
     });
   };
   const handleMarkCompleted = () => {
     handleUpdateTask({
-      status: 'completed',
-      completedAt: new Date().toISOString()
+      status: 'completed'
     });
   };
   const handleSubtaskToggle = async (subtaskId: string) => {
