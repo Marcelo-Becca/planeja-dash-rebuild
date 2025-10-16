@@ -14,7 +14,8 @@ import { CalendarIcon, Clock, MapPin, Users, Bell, Repeat, X } from 'lucide-reac
 import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { useLocalData } from '@/hooks/useLocalData';
+import { useProjects } from '@/hooks/useProjects';
+import { useTeams } from '@/hooks/useTeams';
 import MultiUserSelector from '@/components/MultiUserSelector';
 
 // Helper functions for safe date handling
@@ -47,7 +48,8 @@ export function CreateEventModal({
   initialData,
   isEditing = false,
 }: CreateEventModalProps) {
-  const { projects, teams } = useLocalData();
+  const { projects, loading: projectsLoading } = useProjects();
+  const { teams, loading: teamsLoading } = useTeams();
 
   // Form state
   const [formData, setFormData] = useState({
