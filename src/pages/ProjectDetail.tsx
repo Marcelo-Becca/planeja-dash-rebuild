@@ -11,10 +11,10 @@ import { InvitationButton } from '@/components/invitation/InvitationButton';
 import CreateTaskModal from '@/components/CreateTaskModal';
 import { MultiTeamSelector } from '@/components/MultiTeamSelector';
 import { ArrowLeft, Edit3, Calendar as CalendarIcon, Users, CheckCircle2, Clock, Plus, Trash2, Activity, Target, Settings, User } from 'lucide-react';
-import { useLocalData } from '@/hooks/useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
 import { useTeams } from '@/hooks/useTeams';
+import { useTasks } from '@/hooks/useTasks';
 import { InlineEdit } from '@/components/InlineEdit';
 import { ItemNotFound } from '@/components/ItemNotFound';
 import UserSelector from '@/components/UserSelector';
@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { supabase } from '@/integrations/supabase/client';
 const statusOptions = [{
   value: 'active',
   label: 'Ativo',
@@ -55,7 +56,7 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { projects, loading: projectsLoading, updateProject, deleteProject } = useProjects();
   const { teams } = useTeams();
-  const { tasks, updateTask, users } = useLocalData();
+  const { tasks, updateTask } = useTasks();
   const { user } = useAuth();
   const {
     showUndoToast
@@ -63,8 +64,21 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false);
   const [isManagingTeams, setIsManagingTeams] = useState(false);
+  const [profiles, setProfiles] = useState<any[]>([]);
+
+  // Fetch profiles for leader selector
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('name');
+      if (data) setProfiles(data);
+    };
+    fetchProfiles();
+  }, []);
   const project = projects.find(p => p.id === id);
-  const projectTasks = tasks.filter(task => task.projectId === id);
+  const projectTasks = tasks.filter(task => task.project_id === id);
 
   if (projectsLoading) {
     return (
@@ -306,7 +320,7 @@ export default function ProjectDetail() {
                                 {taskStatus.label}
                               </Badge>
                               <div className="text-xs text-muted-foreground">
-                                {new Date(task.deadline).toLocaleDateString('pt-BR')}
+                                {new Date(task.due_date).toLocaleDateString('pt-BR')}
                               </div>
                             </div>
                           </div>
@@ -492,14 +506,14 @@ export default function ProjectDetail() {
                         <SelectValue placeholder="Selecione o líder" />
                       </SelectTrigger>
                       <SelectContent>
-                        {users.map(user => <SelectItem key={user.id} value={user.id}>
+                        {profiles.map(profile => <SelectItem key={profile.id} value={profile.id}>
                             <div className="flex items-center gap-2">
                               <Avatar className="h-6 w-6">
                                 <AvatarFallback className="text-xs">
-                                  {user.avatar}
+                                  {profile.name.substring(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
-                              <span>{user.name} - {user.role}</span>
+                              <span>{profile.name}{profile.role && ` - ${profile.role}`}</span>
                             </div>
                           </SelectItem>)}
                       </SelectContent>
