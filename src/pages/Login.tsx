@@ -9,15 +9,19 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import DevPanel from '@/components/DevPanel';
-
 const Login = () => {
   const navigate = useNavigate();
-  const { login, isLoading, loginAttempts, isBlocked, blockTimeRemaining } = useAuth();
-  
+  const {
+    login,
+    isLoading,
+    loginAttempts,
+    isBlocked,
+    blockTimeRemaining
+  } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false,
+    rememberMe: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -31,41 +35,40 @@ const Login = () => {
     if (!emailRegex.test(email)) return 'Formato de e-mail inválido';
     return '';
   };
-
   const validatePassword = (password: string) => {
     if (!password) return 'Senha é obrigatória';
     if (password.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
     return '';
   };
-
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+
     // Limpar erro do campo quando usuário começar a digitar
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
     }
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (isBlocked) return;
-    
+
     // Validações
     const emailError = validateEmail(formData.email);
     const passwordError = validatePassword(formData.password);
-    
     if (emailError || passwordError) {
       setErrors({
         email: emailError,
-        password: passwordError,
+        password: passwordError
       });
       return;
     }
-
     setIsSubmitting(true);
-    
     try {
       await login(formData.email, formData.password, formData.rememberMe);
       navigate('/dashboard');
@@ -82,16 +85,13 @@ const Login = () => {
       setFormData({
         email: event.detail.email,
         password: event.detail.password,
-        rememberMe: false,
+        rememberMe: false
       });
     };
-
     window.addEventListener('devQuickFillLogin', handleDevQuickFill as EventListener);
     return () => window.removeEventListener('devQuickFillLogin', handleDevQuickFill as EventListener);
   }, []);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-background via-card to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -111,124 +111,70 @@ const Login = () => {
                 <Label htmlFor="email">E-mail ou usuário</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="text"
-                    placeholder="seu@email.com ou usuario"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    onBlur={(e) => {
-                      const error = validateEmail(e.target.value);
-                      if (error) setErrors(prev => ({ ...prev, email: error }));
-                    }}
-                    className={cn(
-                      "pl-10 transition-colors",
-                      errors.email && "border-destructive"
-                    )}
-                    disabled={isSubmitting || isLoading}
-                  />
+                  <Input id="email" type="text" placeholder="seu@email.com ou usuario" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} onBlur={e => {
+                  const error = validateEmail(e.target.value);
+                  if (error) setErrors(prev => ({
+                    ...prev,
+                    email: error
+                  }));
+                }} className={cn("pl-10 transition-colors", errors.email && "border-destructive")} disabled={isSubmitting || isLoading} />
                 </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
-                )}
+                {errors.email && <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>}
               </div>
 
               {/* Password Field */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Senha</Label>
-                  <Link 
-                    to="/forgot-password" 
-                    className="text-sm text-primary hover:text-primary/80 transition-colors"
-                  >
+                  <Link to="/forgot-password" className="text-sm text-primary hover:text-primary/80 transition-colors">
                     Esqueci minha senha
                   </Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Digite sua senha"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    onBlur={(e) => {
-                      const error = validatePassword(e.target.value);
-                      if (error) setErrors(prev => ({ ...prev, password: error }));
-                    }}
-                    className={cn(
-                      "pl-10 pr-10 transition-colors",
-                      errors.password && "border-destructive"
-                    )}
-                    disabled={isSubmitting || isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Digite sua senha" value={formData.password} onChange={e => handleInputChange('password', e.target.value)} onBlur={e => {
+                  const error = validatePassword(e.target.value);
+                  if (error) setErrors(prev => ({
+                    ...prev,
+                    password: error
+                  }));
+                }} className={cn("pl-10 pr-10 transition-colors", errors.password && "border-destructive")} disabled={isSubmitting || isLoading} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground transition-colors">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
-                )}
+                {errors.password && <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>}
               </div>
 
               {/* Remember Me */}
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={formData.rememberMe}
-                  onCheckedChange={(checked) => handleInputChange('rememberMe', checked as boolean)}
-                />
-                <Label 
-                  htmlFor="remember" 
-                  className="text-sm cursor-pointer"
-                  title="Não recomendado em computadores públicos"
-                >
+                <Checkbox id="remember" checked={formData.rememberMe} onCheckedChange={checked => handleInputChange('rememberMe', checked as boolean)} />
+                <Label htmlFor="remember" className="text-sm cursor-pointer" title="Não recomendado em computadores públicos">
                   Lembrar de mim
                 </Label>
               </div>
 
               {/* Block Warning */}
-              {isBlocked && (
-                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm text-destructive animate-fade-in">
+              {isBlocked && <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm text-destructive animate-fade-in">
                   Muitas tentativas de login. Tente novamente em {blockTimeRemaining} segundos.
-                </div>
-              )}
+                </div>}
 
               {/* Attempts Warning */}
-              {loginAttempts > 0 && loginAttempts < 5 && !isBlocked && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-3 text-sm text-amber-600">
+              {loginAttempts > 0 && loginAttempts < 5 && !isBlocked && <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-3 text-sm text-amber-600">
                   Tentativa {loginAttempts} de 5. Após 5 tentativas, sua conta será bloqueada temporariamente.
-                </div>
-              )}
+                </div>}
 
               {/* Submit Button */}
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                disabled={isSubmitting || isLoading || isBlocked}
-              >
-                {isSubmitting || isLoading ? (
-                  <>
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || isLoading || isBlocked}>
+                {isSubmitting || isLoading ? <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Entrando...
-                  </>
-                ) : (
-                  'Entrar'
-                )}
+                  </> : 'Entrar'}
               </Button>
             </form>
 
             {/* Demo tools moved to dev panel */}
-            <div className="mt-4 pt-4 border-t border-border">
-              <p className="text-center text-xs text-muted-foreground">
-                Precisa de uma conta de demonstração? Ative o modo desenvolvedor.
-              </p>
-            </div>
+            
 
             {/* Sign Up Link */}
             <p className="text-center text-sm text-muted-foreground mt-4">
@@ -243,8 +189,6 @@ const Login = () => {
         {/* Dev Panel */}
         <DevPanel />
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Login;
