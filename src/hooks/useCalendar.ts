@@ -169,17 +169,17 @@ export function useCalendar() {
         .from('calendar_events')
         .insert({
           title: eventData.title,
-          description: eventData.description,
+          description: eventData.description || null,
           start_date: eventData.startDate.toISOString(),
           end_date: eventData.endDate.toISOString(),
           all_day: eventData.allDay,
           type: eventData.type,
-          location: eventData.location,
-          project_id: eventData.projectId,
-          team_id: eventData.teamId,
-          task_id: eventData.taskId,
+          location: eventData.location || null,
+          project_id: eventData.projectId || null,
+          team_id: eventData.teamId || null,
+          task_id: eventData.taskId || null,
           priority: eventData.priority,
-          color: eventData.color,
+          color: eventData.color || null,
           status: eventData.status,
           created_by: user.id,
         })
@@ -240,17 +240,17 @@ export function useCalendar() {
       // Update event
       const eventUpdates: any = {};
       if (updates.title !== undefined) eventUpdates.title = updates.title;
-      if (updates.description !== undefined) eventUpdates.description = updates.description;
+      if (updates.description !== undefined) eventUpdates.description = updates.description || null;
       if (updates.startDate !== undefined) eventUpdates.start_date = updates.startDate.toISOString();
       if (updates.endDate !== undefined) eventUpdates.end_date = updates.endDate.toISOString();
       if (updates.allDay !== undefined) eventUpdates.all_day = updates.allDay;
       if (updates.type !== undefined) eventUpdates.type = updates.type;
-      if (updates.location !== undefined) eventUpdates.location = updates.location;
-      if (updates.projectId !== undefined) eventUpdates.project_id = updates.projectId;
-      if (updates.teamId !== undefined) eventUpdates.team_id = updates.teamId;
-      if (updates.taskId !== undefined) eventUpdates.task_id = updates.taskId;
+      if (updates.location !== undefined) eventUpdates.location = updates.location || null;
+      if (updates.projectId !== undefined) eventUpdates.project_id = updates.projectId || null;
+      if (updates.teamId !== undefined) eventUpdates.team_id = updates.teamId || null;
+      if (updates.taskId !== undefined) eventUpdates.task_id = updates.taskId || null;
       if (updates.priority !== undefined) eventUpdates.priority = updates.priority;
-      if (updates.color !== undefined) eventUpdates.color = updates.color;
+      if (updates.color !== undefined) eventUpdates.color = updates.color || null;
       if (updates.status !== undefined) eventUpdates.status = updates.status;
 
       const { error: eventError } = await supabase
