@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvitationButton } from '@/components/invitation/InvitationButton';
+import { toast } from 'sonner';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -102,6 +103,8 @@ export default function TeamDetail() {
     );
   }
 
+  const isLeader = user?.id === team.leader_id;
+
   const handleUpdateTeam = async (updates: any) => {
     await updateTeam(team.id, updates);
   };
@@ -114,6 +117,11 @@ export default function TeamDetail() {
   };
 
   const handleRemoveMember = async (userId: string) => {
+    if (!isLeader) {
+      toast.error('Apenas o líder pode remover membros');
+      return;
+    }
+    
     if (window.confirm('Tem certeza que deseja remover este membro da equipe?')) {
       const updatedMembers = team.members?.filter(id => id !== userId) || [];
       await handleUpdateTeam({ members: updatedMembers });
@@ -121,6 +129,11 @@ export default function TeamDetail() {
   };
 
   const handleAddMembers = async () => {
+    if (!isLeader) {
+      toast.error('Apenas o líder pode adicionar membros');
+      return;
+    }
+    
     if (selectedNewMembers.length === 0) return;
 
     const currentMembers = team.members || [];
@@ -135,6 +148,11 @@ export default function TeamDetail() {
   };
 
   const handleChangeLeader = async (newLeaderId: string) => {
+    if (!isLeader) {
+      toast.error('Apenas o líder pode mudar o líder da equipe');
+      return;
+    }
+    
     if (window.confirm('Tem certeza que deseja alterar o líder desta equipe?')) {
       await handleUpdateTeam({ leader_id: newLeaderId });
     }
@@ -343,24 +361,30 @@ export default function TeamDetail() {
               <Card>
                 <CardHeader className="flex flex-col space-y-4">
                   <CardTitle>Membros da Equipe ({teamMembers.length})</CardTitle>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="flex-1">
-                      <MultiUserSelector
-                        selectedUsers={selectedNewMembers}
-                        onSelectionChange={setSelectedNewMembers}
-                        placeholder="Selecionar membros para adicionar..."
-                        className="w-full"
-                      />
+                  {isLeader ? (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1">
+                        <MultiUserSelector
+                          selectedUsers={selectedNewMembers}
+                          onSelectionChange={setSelectedNewMembers}
+                          placeholder="Selecionar membros para adicionar..."
+                          className="w-full"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleAddMembers}
+                        disabled={selectedNewMembers.length === 0}
+                        className="gap-2"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Adicionar {selectedNewMembers.length > 0 && `(${selectedNewMembers.length})`}
+                      </Button>
                     </div>
-                    <Button 
-                      onClick={handleAddMembers}
-                      disabled={selectedNewMembers.length === 0}
-                      className="gap-2"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                      Adicionar {selectedNewMembers.length > 0 && `(${selectedNewMembers.length})`}
-                    </Button>
-                  </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Apenas o líder pode adicionar membros à equipe.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -394,32 +418,34 @@ export default function TeamDetail() {
                           </div>
                         </div>
                         
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {member.id !== team.leader_id && (
-                              <DropdownMenuItem 
-                                onClick={() => handleChangeLeader(member.id)}
-                              >
-                                <Crown className="mr-2 h-4 w-4" />
-                                Tornar Líder
-                              </DropdownMenuItem>
-                            )}
-                            {member.id !== team.leader_id && (
-                              <DropdownMenuItem 
-                                onClick={() => handleRemoveMember(member.id)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Remover
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {isLeader && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {member.id !== team.leader_id && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleChangeLeader(member.id)}
+                                >
+                                  <Crown className="mr-2 h-4 w-4" />
+                                  Tornar Líder
+                                </DropdownMenuItem>
+                              )}
+                              {member.id !== team.leader_id && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleRemoveMember(member.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Remover
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     ))}
                     

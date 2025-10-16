@@ -161,6 +161,7 @@ export function useTeams() {
       name: string;
       description: string;
       main_objective: string;
+      leader_id: string;
       members: string[];
     }>
   ) => {
