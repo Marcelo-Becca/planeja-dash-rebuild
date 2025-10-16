@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
-import { testUsers, defaultTestUser, type TestUser } from '@/data/testUsers';
+
 
 interface User {
   id: string;
@@ -20,8 +20,6 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  testUsers: TestUser[];
-  switchToTestUser: (testUser: TestUser) => void;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
@@ -53,13 +51,8 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Simulação de base de dados local
-const MOCK_USERS_KEY = 'planeja_mock_users';
-const CURRENT_USER_KEY = 'planeja_current_user';
 const LOGIN_ATTEMPTS_KEY = 'planeja_login_attempts';
 
-// Usuário padrão para demonstração
-const DEMO_USER: User = defaultTestUser;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -274,17 +267,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchToTestUser = (testUser: TestUser) => {
-    const user: User = testUser;
-    setUser(user);
-    setIsEmailVerified(true);
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-    
-    toast({
-      title: "Usuário alterado",
-      description: `Agora você está logado como ${testUser.name}`,
-    });
-  };
 
   const resetPassword = async (email: string) => {
     setIsLoading(true);
@@ -317,7 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedUser = { ...user, emailVerified: true };
       setUser(updatedUser);
       setIsEmailVerified(true);
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+      
       
       toast({
         title: "Verificação simulada",
@@ -385,8 +367,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isLoading,
-        testUsers,
-        switchToTestUser,
         login,
         register,
         logout,

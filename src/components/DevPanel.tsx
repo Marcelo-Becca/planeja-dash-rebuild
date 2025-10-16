@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Code, Settings, Users, Mail, FileText, X, Eye, EyeOff } from "lucide-react";
-import TestUserSwitcher from "./TestUserSwitcher";
+import { Code, Settings, Mail, FileText, X, Eye, EyeOff } from "lucide-react";
+
 import { useAuth } from "@/contexts/AuthContext";
 
 interface DevPanelProps {
@@ -126,23 +126,6 @@ export default function DevPanel({ isVisible = false }: DevPanelProps) {
           </DialogHeader>
           
           <div className="space-y-6">
-            {/* User Testing */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Users className="w-5 h-5" />
-                  Usuários de Teste
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Alterne entre diferentes perfis de usuário para testar funcionalidades.
-                  </p>
-                  <TestUserSwitcher />
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Form Helpers */}
             <Card>

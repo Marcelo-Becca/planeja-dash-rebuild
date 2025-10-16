@@ -110,16 +110,16 @@ import { sampleProjects, sampleTasks, sampleTeams, mockUsers } from './sampleDat
 // Re-export mockUsers for compatibility
 export { mockUsers };
 
-// Mock projects - using sample data with test users
+// Mock projects - using sample data
 export const mockProjects: Project[] = sampleProjects;
 
-// Mock tasks - using sample data with test users
+// Mock tasks - using sample data
 export const mockTasks: Task[] = sampleTasks;
 
-// Mock teams - using sample data with test users
+// Mock teams - using sample data
 export const mockTeams: Team[] = sampleTeams;
 
-// Current user (for profile) - default to first test user
+// Current user (for profile) - default to first mock user
 export const currentUser: User = mockUsers[0] || {
   id: 'current',
   name: 'Ana Silva',

@@ -1,15 +1,20 @@
-// Sample projects, tasks and teams using the test users
-import { testUsers } from './testUsers';
+// Sample projects, tasks and teams using sample users (no test user dependency)
 import { Project, Task, Team, TeamMember, TeamActivity, User } from './mockData';
 
-// Create mockUsers here to avoid circular dependency
-export const mockUsers: User[] = testUsers.map(testUser => ({
-  id: testUser.id,
-  name: testUser.name,
-  email: testUser.email,
-  avatar: testUser.avatar || testUser.name.split(' ').map(n => n[0]).join(''),
-  role: testUser.role
-}));
+// Define mockUsers locally to avoid any dependency on removed test users
+export const mockUsers: User[] = [
+  { id: 'u-001', name: 'Ana Silva', email: 'ana.silva@planejaplus.com', avatar: 'AS', role: 'Product Manager' },
+  { id: 'u-002', name: 'Carlos Santos', email: 'carlos.santos@planejaplus.com', avatar: 'CS', role: 'Tech Lead' },
+  { id: 'u-003', name: 'Marina Costa', email: 'marina.costa@planejaplus.com', avatar: 'MC', role: 'UX Designer' },
+  { id: 'u-004', name: 'Roberto Lima', email: 'roberto.lima@planejaplus.com', avatar: 'RL', role: 'Backend Engineer' },
+  { id: 'u-005', name: 'Julia Ferreira', email: 'julia.ferreira@planejaplus.com', avatar: 'JF', role: 'QA Analyst' },
+  { id: 'u-006', name: 'Pedro Oliveira', email: 'pedro.oliveira@planejaplus.com', avatar: 'PO', role: 'Data Analyst' },
+  { id: 'u-007', name: 'Camila Torres', email: 'camila.torres@planejaplus.com', avatar: 'CT', role: 'Mobile Developer' },
+  { id: 'u-008', name: 'Lucas Mendes', email: 'lucas.mendes@planejaplus.com', avatar: 'LM', role: 'Frontend Developer' },
+  { id: 'u-009', name: 'Fernanda Alves', email: 'fernanda.alves@planejaplus.com', avatar: 'FA', role: 'DevOps Engineer' },
+  { id: 'u-010', name: 'Gabriel Rocha', email: 'gabriel.rocha@planejaplus.com', avatar: 'GR', role: 'Fullstack Developer' },
+];
+
 
 // Helper function to get user by index
 const getUser = (index: number) => mockUsers[index % mockUsers.length];
