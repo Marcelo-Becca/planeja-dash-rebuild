@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { useLocalData } from './useLocalData';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   ReportFilters, 
   ChartDataPoint, 
@@ -9,7 +9,7 @@ import {
   TeamProductivityData,
   DetailedTaskForReports
 } from '@/types/reports';
-import { subDays, subWeeks, subMonths, subQuarters, subYears, startOfDay, endOfDay, format, differenceInDays, isAfter, isBefore, isWithinInterval, isValid } from 'date-fns';
+import { subDays, subWeeks, subMonths, subQuarters, subYears, startOfDay, endOfDay, format, differenceInDays, isAfter, isBefore, isWithinInterval, isValid, parseISO } from 'date-fns';
 
 // Helper functions for data processing
 
@@ -40,21 +40,107 @@ const defaultFilters: ReportFilters = {
 
 export function useReportsAnalytics() {
   const { user } = useAuth();
-  const localData = useLocalData();
   const [filters, setFilters] = useState<ReportFilters>(defaultFilters);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
 
-  // Clean up any demo data from localStorage on component mount
+  // Fetch data from Supabase
   useEffect(() => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('planeja-demo-reports-data');
-    }
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch projects
+        const { data: projectsData } = await supabase
+          .from('projects')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        // Fetch tasks with assignees
+        const { data: tasksData } = await supabase
+          .from('tasks')
+          .select(`
+            *,
+            task_assignees (
+              user_id,
+              profiles (
+                id,
+                name,
+                display_name,
+                avatar
+              )
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        // Fetch teams with members
+        const { data: teamsData } = await supabase
+          .from('teams')
+          .select(`
+            *,
+            team_members (
+              user_id,
+              profiles (
+                id,
+                name,
+                display_name,
+                avatar
+              )
+            ),
+            project_teams (
+              project_id
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        // Fetch profiles
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('name');
+
+        setProjects(projectsData || []);
+        setTasks(tasksData || []);
+        setTeams(teamsData || []);
+        setProfiles(profilesData || []);
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+
+    // Subscribe to real-time updates
+    const tasksChannel = supabase
+      .channel('tasks-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchData)
+      .subscribe();
+
+    const projectsChannel = supabase
+      .channel('projects-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, fetchData)
+      .subscribe();
+
+    const teamsChannel = supabase
+      .channel('teams-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, fetchData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(tasksChannel);
+      supabase.removeChannel(projectsChannel);
+      supabase.removeChannel(teamsChannel);
+    };
   }, []);
 
   // Check if we have real data
   const hasRealData = useMemo(() => {
-    return localData.projects.length > 0 || localData.tasks.length > 0 || localData.teams.length > 0;
-  }, [localData.projects.length, localData.tasks.length, localData.teams.length]);
+    return projects.length > 0 || tasks.length > 0 || teams.length > 0;
+  }, [projects.length, tasks.length, teams.length]);
 
   // Calculate date range based on filters
   const dateRange = useMemo(() => {
@@ -94,36 +180,39 @@ export function useReportsAnalytics() {
   const filteredTasks = useMemo(() => {
     if (!hasRealData) return [];
 
-    return localData.tasks.filter(task => {
+    return tasks.filter(task => {
       // Date filter
-      const taskDate = safeCreateDate(task.createdAt);
+      const taskDate = safeCreateDate(task.created_at);
       if (!taskDate || !isWithinInterval(taskDate, dateRange)) return false;
 
       // Project filter
-      if (filters.projects.length > 0 && !filters.projects.includes(task.projectId)) return false;
+      if (filters.projects.length > 0 && !filters.projects.includes(task.project_id)) return false;
 
       // Status filter
       if (filters.status !== "all" && task.status !== filters.status) return false;
 
       // Member filter
       if (filters.members.length > 0) {
-        const taskAssignees = task.assignedTo?.map(u => u.id) || [];
-        if (!taskAssignees.some(id => filters.members.includes(id))) return false;
+        const taskAssignees = task.task_assignees?.map((ta: any) => ta.user_id) || [];
+        if (!taskAssignees.some((id: string) => filters.members.includes(id))) return false;
       }
 
       return true;
     }).map(task => {
-      const createdDate = safeCreateDate(task.createdAt);
-      const deadlineDate = safeCreateDate(task.deadline);
+      const createdDate = safeCreateDate(task.created_at);
+      const deadlineDate = safeCreateDate(task.due_date);
+      const project = projects.find(p => p.id === task.project_id);
+      const team = teams.find(t => t.project_teams?.some((pt: any) => pt.project_id === task.project_id));
+      const assignee = task.task_assignees?.[0]?.profiles;
       
       return {
         id: task.id,
         title: task.title,
         description: task.description,
-        project: localData.projects.find(p => p.id === task.projectId)?.name || 'Projeto não encontrado',
-        projectId: task.projectId,
-        team: localData.teams.find(t => t.projects.some(p => p.id === task.projectId))?.name,
-        assignee: task.assignedTo?.[0]?.name || 'Não atribuído',
+        project: project?.name || 'Projeto não encontrado',
+        projectId: task.project_id,
+        team: team?.name,
+        assignee: assignee?.name || assignee?.display_name || 'Não atribuído',
         priority: task.priority,
         status: task.status,
         createdAt: safeFormatDate(createdDate),
@@ -132,7 +221,7 @@ export function useReportsAnalytics() {
         timeSpent: task.status === 'completed' && createdDate && deadlineDate ? differenceInDays(deadlineDate, createdDate) : undefined
       } as DetailedTaskForReports;
     });
-  }, [hasRealData, localData, dateRange, filters]);
+  }, [hasRealData, tasks, projects, teams, dateRange, filters]);
 
 
   // Generate timeline chart data
@@ -171,7 +260,7 @@ export function useReportsAnalytics() {
   const projectPerformanceData = useMemo((): ProjectPerformanceData[] => {
     if (!hasRealData) return [];
 
-    return localData.projects.map(project => {
+    return projects.map(project => {
       const projectTasks = filteredTasks.filter(t => t.projectId === project.id);
       const completedTasks = projectTasks.filter(t => t.status === 'completed');
       
@@ -187,7 +276,7 @@ export function useReportsAnalytics() {
           : 0
       };
     });
-  }, [hasRealData, localData.projects, filteredTasks]);
+  }, [hasRealData, projects, filteredTasks]);
 
   // Generate task distribution data
   const taskDistributionData = useMemo((): TaskDistributionData[] => {
@@ -218,23 +307,22 @@ export function useReportsAnalytics() {
   const teamProductivityData = useMemo((): TeamProductivityData[] => {
     if (!hasRealData) return [];
 
-    return localData.teams.map(team => {
-      const teamTasks = filteredTasks.filter(t => {
-        const project = localData.projects.find(p => p.id === t.projectId);
-        return team.projects.some(tp => tp.id === project?.id);
-      });
+    return teams.map(team => {
+      const teamProjects = team.project_teams?.map((pt: any) => pt.project_id) || [];
+      const teamTasks = filteredTasks.filter(t => teamProjects.includes(t.projectId));
+      const members = team.team_members?.map((tm: any) => tm.profiles?.name || tm.profiles?.display_name) || [];
 
       return {
         teamId: team.id,
         name: team.name,
-        members: team.members.map(m => m.user.name),
+        members: members,
         completedTasks: teamTasks.filter(t => t.status === 'completed').length,
         inProgressTasks: teamTasks.filter(t => t.status === 'in-progress').length,
         overdueTasks: teamTasks.filter(t => t.status === 'overdue').length,
-        avgTasksPerMember: team.members.length > 0 ? teamTasks.length / team.members.length : 0
+        avgTasksPerMember: members.length > 0 ? teamTasks.length / members.length : 0
       };
     });
-  }, [hasRealData, localData.teams, localData.projects, filteredTasks]);
+  }, [hasRealData, teams, filteredTasks]);
 
   // Get tasks by category for drill-down
   const getTasksByCategory = useCallback((category: string) => {
@@ -271,11 +359,11 @@ export function useReportsAnalytics() {
     if (!hasRealData) return { projects: [], teams: [], members: [] };
 
     return {
-      projects: localData.projects.map(p => ({ id: p.id, name: p.name })),
-      teams: localData.teams.map(t => ({ id: t.id, name: t.name })),
-      members: localData.users.map(u => ({ id: u.id, name: u.name }))
+      projects: projects.map(p => ({ id: p.id, name: p.name })),
+      teams: teams.map(t => ({ id: t.id, name: t.name })),
+      members: profiles.map(u => ({ id: u.id, name: u.name || u.display_name }))
     };
-  }, [hasRealData, localData]);
+  }, [hasRealData, projects, teams, profiles]);
 
   return {
     // State
