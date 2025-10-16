@@ -134,6 +134,12 @@ export default function TeamDetail() {
     }
   };
 
+  const handleChangeLeader = async (newLeaderId: string) => {
+    if (window.confirm('Tem certeza que deseja alterar o líder desta equipe?')) {
+      await handleUpdateTeam({ leader_id: newLeaderId });
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -388,14 +394,22 @@ export default function TeamDetail() {
                           </div>
                         </div>
                         
-                        {member.id !== team.leader_id && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {member.id !== team.leader_id && (
+                              <DropdownMenuItem 
+                                onClick={() => handleChangeLeader(member.id)}
+                              >
+                                <Crown className="mr-2 h-4 w-4" />
+                                Tornar Líder
+                              </DropdownMenuItem>
+                            )}
+                            {member.id !== team.leader_id && (
                               <DropdownMenuItem 
                                 onClick={() => handleRemoveMember(member.id)}
                                 className="text-destructive"
@@ -403,9 +417,9 @@ export default function TeamDetail() {
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Remover
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     ))}
                     
