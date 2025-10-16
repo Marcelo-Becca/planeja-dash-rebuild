@@ -6,7 +6,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Users, Target, Edit, Trash2 } from 'lucide-react';
 import { Team } from '@/hooks/useTeams';
 import { useLocalData } from '@/hooks/useLocalData';
-
 interface TeamCardProps {
   team: Team;
   onEdit?: (team: Team) => void;
@@ -17,14 +16,14 @@ export function TeamCard({
   onEdit,
   onDelete
 }: TeamCardProps) {
-  const { users } = useLocalData();
+  const {
+    users
+  } = useLocalData();
 
   // Get member user objects from IDs
   const teamMembers = users.filter(user => team.members?.includes(user.id));
   const teamLeader = users.find(user => user.id === team.leader_id);
-
-  return (
-    <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary bg-card/50 backdrop-blur-sm">
+  return <Card className="group hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary bg-card/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -40,9 +39,7 @@ export function TeamCard({
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="h-8 w-8 rounded-md hover:bg-muted flex items-center justify-center transition-colors">
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
+              
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => onEdit?.(team)}>
@@ -66,17 +63,14 @@ export function TeamCard({
               <Users className="h-4 w-4" />
               <span>{teamMembers.length} {teamMembers.length === 1 ? 'membro' : 'membros'}</span>
             </div>
-            {team.main_objective && (
-              <div className="flex items-center gap-1">
+            {team.main_objective && <div className="flex items-center gap-1">
                 <Target className="h-4 w-4" />
                 <span className="truncate max-w-[150px]">{team.main_objective}</span>
-              </div>
-            )}
+              </div>}
           </div>
 
           {/* Leader */}
-          {teamLeader && (
-            <div className="flex items-center gap-2">
+          {teamLeader && <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Líder:</span>
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6 border-2 border-background">
@@ -86,31 +80,23 @@ export function TeamCard({
                 </Avatar>
                 <span className="text-sm font-medium">{teamLeader.name}</span>
               </div>
-            </div>
-          )}
+            </div>}
 
           {/* Member Avatars */}
-          {teamMembers.length > 0 && (
-            <div className="flex items-center gap-2">
+          {teamMembers.length > 0 && <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">Membros:</span>
               <div className="flex -space-x-2">
-                {teamMembers.slice(0, 3).map(member => (
-                  <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
+                {teamMembers.slice(0, 3).map(member => <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                       {member.avatar}
                     </AvatarFallback>
-                  </Avatar>
-                ))}
-                {teamMembers.length > 3 && (
-                  <div className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center">
+                  </Avatar>)}
+                {teamMembers.length > 3 && <div className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center">
                     <span className="text-xs text-muted-foreground">+{teamMembers.length - 3}</span>
-                  </div>
-                )}
+                  </div>}
               </div>
-            </div>
-          )}
+            </div>}
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }
