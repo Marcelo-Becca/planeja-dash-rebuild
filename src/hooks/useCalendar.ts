@@ -161,9 +161,12 @@ export function useCalendar() {
 
   // Event CRUD operations
   const createEvent = useCallback(async (eventData: Omit<CalendarEvent, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return null;
-
     try {
+      // Get authenticated user
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!authUser) throw new Error('Usuário não autenticado');
+
       // Insert event
       const { data: event, error: eventError } = await supabase
         .from('calendar_events')
@@ -181,7 +184,7 @@ export function useCalendar() {
           priority: eventData.priority,
           color: eventData.color || null,
           status: eventData.status,
-          created_by: user.id,
+          created_by: authUser.id,
         })
         .select()
         .single();
@@ -233,7 +236,7 @@ export function useCalendar() {
       });
       return null;
     }
-  }, [user, fetchEvents]);
+  }, [fetchEvents]);
 
   const updateEvent = useCallback(async (eventId: string, updates: Partial<CalendarEvent>) => {
     try {
