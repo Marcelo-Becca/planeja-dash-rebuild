@@ -12,25 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useTeams } from "@/hooks/useTeams";
 import { useLocalData } from "@/hooks/useLocalData";
 import { cn } from "@/lib/utils";
-import {
-  Plus,
-  X,
-  AlertCircle,
-  Users,
-  Target,
-  CheckCircle2,
-  Loader2,
-  Undo2,
-  Palette,
-  HelpCircle
-} from "lucide-react";
+import { Plus, X, AlertCircle, Users, Target, CheckCircle2, Loader2, Undo2, Palette, HelpCircle } from "lucide-react";
 import { Team } from "@/data/mockData";
-
 interface CreateTeamModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
 interface TeamFormData {
   name: string;
   description: string;
@@ -39,49 +26,64 @@ interface TeamFormData {
   memberIds: string[];
   color: string;
 }
-
-const teamColors = [
-  { value: "#3B82F6", name: "Azul" },
-  { value: "#EF4444", name: "Vermelho" },
-  { value: "#10B981", name: "Verde" },
-  { value: "#F59E0B", name: "Amarelo" },
-  { value: "#8B5CF6", name: "Roxo" },
-  { value: "#EC4899", name: "Rosa" },
-  { value: "#06B6D4", name: "Ciano" },
-  { value: "#84CC16", name: "Lima" },
-  { value: "#F97316", name: "Laranja" },
-  { value: "#6B7280", name: "Cinza" }
-];
-
-const objectiveSuggestions = [
-  "Desenvolver produtos digitais",
-  "Gerenciar marketing e vendas",
-  "Garantir qualidade e testes",
-  "Fornecer suporte ao cliente",
-  "Pesquisar e inovar",
-  "Gerenciar recursos humanos",
-  "Administrar operações",
-  "Cuidar da infraestrutura"
-];
-
-export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalProps) {
-  const { toast } = useToast();
-  const { users } = useLocalData();
-  const { teams, createTeam } = useTeams();
+const teamColors = [{
+  value: "#3B82F6",
+  name: "Azul"
+}, {
+  value: "#EF4444",
+  name: "Vermelho"
+}, {
+  value: "#10B981",
+  name: "Verde"
+}, {
+  value: "#F59E0B",
+  name: "Amarelo"
+}, {
+  value: "#8B5CF6",
+  name: "Roxo"
+}, {
+  value: "#EC4899",
+  name: "Rosa"
+}, {
+  value: "#06B6D4",
+  name: "Ciano"
+}, {
+  value: "#84CC16",
+  name: "Lima"
+}, {
+  value: "#F97316",
+  name: "Laranja"
+}, {
+  value: "#6B7280",
+  name: "Cinza"
+}];
+const objectiveSuggestions = ["Desenvolver produtos digitais", "Gerenciar marketing e vendas", "Garantir qualidade e testes", "Fornecer suporte ao cliente", "Pesquisar e inovar", "Gerenciar recursos humanos", "Administrar operações", "Cuidar da infraestrutura"];
+export default function CreateTeamModal({
+  open,
+  onOpenChange
+}: CreateTeamModalProps) {
+  const {
+    toast
+  } = useToast();
+  const {
+    users
+  } = useLocalData();
+  const {
+    teams,
+    createTeam
+  } = useTeams();
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showHelp, setShowHelp] = useState(false);
   const [recentlyCreated, setRecentlyCreated] = useState<Team | null>(null);
-
   const [formData, setFormData] = useState<TeamFormData>({
     name: "",
-    description: "", 
+    description: "",
     objective: "",
     leaderId: "",
     memberIds: [],
     color: teamColors[0].value
   });
-
   const resetForm = () => {
     setFormData({
       name: "",
@@ -94,10 +96,8 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
     setErrors({});
     setRecentlyCreated(null);
   };
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
     if (!formData.name.trim()) {
       newErrors.name = "Nome da equipe é obrigatório";
     } else if (formData.name.trim().length < 3) {
@@ -105,17 +105,13 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
     }
 
     // Check for duplicate team name
-    const duplicateName = teams.find(team => 
-      team.name.toLowerCase() === formData.name.trim().toLowerCase()
-    );
+    const duplicateName = teams.find(team => team.name.toLowerCase() === formData.name.trim().toLowerCase());
     if (duplicateName) {
       newErrors.name = "Já existe uma equipe com este nome";
     }
-    
     if (!formData.leaderId) {
       newErrors.leaderId = "Líder da equipe é obrigatório";
     }
-
     if (formData.memberIds.length === 0) {
       newErrors.members = "Equipe deve ter pelo menos um membro";
     }
@@ -124,25 +120,20 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
     if (formData.leaderId && !formData.memberIds.includes(formData.leaderId)) {
       newErrors.leaderId = "O líder deve estar incluído nos membros da equipe";
     }
-
     return newErrors;
   };
-
   const handleSubmit = async () => {
     const validationErrors = validateForm();
     setErrors(validationErrors);
-
     if (Object.keys(validationErrors).length > 0) {
       toast({
         title: "Erro na validação",
         description: "Por favor, corrija os erros antes de continuar.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsLoading(true);
-
     try {
       const newTeam = await createTeam({
         name: formData.name.trim(),
@@ -150,7 +141,6 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
         main_objective: formData.objective.trim(),
         members: formData.memberIds
       });
-
       if (newTeam) {
         onOpenChange(false);
         resetForm();
@@ -159,16 +149,14 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
       toast({
         title: "Erro ao criar equipe",
         description: "Ocorreu um erro inesperado. Tente novamente.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(false);
     }
   };
-
   const handleCancel = () => {
     const hasData = formData.name || formData.description || formData.memberIds.length > 0;
-    
     if (hasData) {
       if (confirm("Tem certeza que deseja cancelar? Todas as informações serão perdidas.")) {
         onOpenChange(false);
@@ -179,45 +167,39 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
       resetForm();
     }
   };
-
   const toggleMember = (userId: string) => {
     setFormData(prev => ({
       ...prev,
-      memberIds: prev.memberIds.includes(userId)
-        ? prev.memberIds.filter(id => id !== userId)
-        : [...prev.memberIds, userId]
+      memberIds: prev.memberIds.includes(userId) ? prev.memberIds.filter(id => id !== userId) : [...prev.memberIds, userId]
     }));
   };
-
   const handleLeaderChange = (leaderId: string) => {
     setFormData(prev => ({
       ...prev,
       leaderId,
       memberIds: prev.memberIds.includes(leaderId) ? prev.memberIds : [...prev.memberIds, leaderId]
     }));
-    if (errors.leaderId) setErrors(prev => ({ ...prev, leaderId: "" }));
+    if (errors.leaderId) setErrors(prev => ({
+      ...prev,
+      leaderId: ""
+    }));
   };
-
   const addAllMembers = () => {
     setFormData(prev => ({
       ...prev,
       memberIds: users.map(u => u.id)
     }));
   };
-
   const clearAllMembers = () => {
     setFormData(prev => ({
       ...prev,
       memberIds: prev.leaderId ? [prev.leaderId] : []
     }));
   };
-
   const getSelectedMembers = () => {
     return users.filter(u => formData.memberIds.includes(u.id));
   };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -229,12 +211,7 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                 Configure uma equipe para colaboração e gerenciamento de projetos
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHelp(!showHelp)}
-              className="gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowHelp(!showHelp)} className="gap-2">
               <HelpCircle className="w-4 h-4" />
               Ajuda
             </Button>
@@ -242,8 +219,7 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
         </DialogHeader>
 
         {/* Help Section */}
-        {showHelp && (
-          <div className="bg-muted/50 p-4 rounded-lg border mb-4">
+        {showHelp && <div className="bg-muted/50 p-4 rounded-lg border mb-4">
             <h4 className="font-medium mb-2">Dicas para criar uma equipe:</h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Escolha um nome descritivo que identifique facilmente a equipe</li>
@@ -252,8 +228,7 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
               <li>• Cores ajudam a identificar visualmente a equipe nos projetos</li>
               <li>• Você pode editar membros e informações após criar a equipe</li>
             </ul>
-          </div>
-        )}
+          </div>}
 
         <div className="space-y-6">
           {/* Basic Information */}
@@ -267,61 +242,33 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                   Nome da Equipe
                   <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="teamName"
-                  placeholder="Ex.: Time de Desenvolvimento"
-                  value={formData.name}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, name: e.target.value }));
-                    if (errors.name) setErrors(prev => ({ ...prev, name: "" }));
-                  }}
-                  className={cn(errors.name && "border-red-500")}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
+                <Input id="teamName" placeholder="Ex.: Time de Desenvolvimento" value={formData.name} onChange={e => {
+                setFormData(prev => ({
+                  ...prev,
+                  name: e.target.value
+                }));
+                if (errors.name) setErrors(prev => ({
+                  ...prev,
+                  name: ""
+                }));
+              }} className={cn(errors.name && "border-red-500")} />
+                {errors.name && <p className="text-sm text-red-500 flex items-center gap-1">
                     <AlertCircle className="h-4 w-4" />
                     {errors.name}
-                  </p>
-                )}
+                  </p>}
               </div>
 
               {/* Team Color */}
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Palette className="w-4 h-4" />
-                  Cor da Equipe
-                </Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {teamColors.map((color) => (
-                    <button
-                      key={color.value}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, color: color.value }))}
-                      className={cn(
-                        "w-8 h-8 rounded-full border-2 transition-all hover:scale-110",
-                        formData.color === color.value ? "border-primary scale-110 shadow-lg" : "border-border"
-                      )}
-                      style={{ backgroundColor: color.value }}
-                      title={color.name}
-                    />
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Cor selecionada: {teamColors.find(c => c.value === formData.color)?.name}
-                </p>
-              </div>
+              
             </div>
 
             {/* Description */}
             <div className="space-y-2">
               <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                placeholder="Descreva o propósito e responsabilidades desta equipe..."
-                value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="min-h-16"
-              />
+              <Textarea id="description" placeholder="Descreva o propósito e responsabilidades desta equipe..." value={formData.description} onChange={e => setFormData(prev => ({
+              ...prev,
+              description: e.target.value
+            }))} className="min-h-16" />
             </div>
 
             {/* Objective */}
@@ -331,27 +278,19 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                 Objetivo Principal
               </Label>
               <div className="space-y-2">
-                <Input
-                  id="objective"
-                  placeholder="Ex.: Desenvolver e manter produtos digitais"
-                  value={formData.objective}
-                  onChange={(e) => setFormData(prev => ({ ...prev, objective: e.target.value }))}
-                />
+                <Input id="objective" placeholder="Ex.: Desenvolver e manter produtos digitais" value={formData.objective} onChange={e => setFormData(prev => ({
+                ...prev,
+                objective: e.target.value
+              }))} />
                 
                 {/* Objective suggestions */}
                 <div className="flex flex-wrap gap-1">
-                  {objectiveSuggestions.slice(0, 4).map((suggestion) => (
-                    <Button
-                      key={suggestion}
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFormData(prev => ({ ...prev, objective: suggestion }))}
-                      className="h-6 px-2 text-xs"
-                    >
+                  {objectiveSuggestions.slice(0, 4).map(suggestion => <Button key={suggestion} type="button" variant="ghost" size="sm" onClick={() => setFormData(prev => ({
+                  ...prev,
+                  objective: suggestion
+                }))} className="h-6 px-2 text-xs">
                       {suggestion}
-                    </Button>
-                  ))}
+                    </Button>)}
                 </div>
               </div>
             </div>
@@ -367,16 +306,12 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                 Líder da Equipe
                 <span className="text-red-500">*</span>
               </Label>
-              <Select
-                value={formData.leaderId}
-                onValueChange={handleLeaderChange}
-              >
+              <Select value={formData.leaderId} onValueChange={handleLeaderChange}>
                 <SelectTrigger className={cn(errors.leaderId && "border-red-500")}>
                   <SelectValue placeholder="Selecione o líder da equipe" />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
+                  {users.map(user => <SelectItem key={user.id} value={user.id}>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback>{user.avatar}</AvatarFallback>
@@ -386,16 +321,13 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                           <span className="text-muted-foreground text-sm ml-2">{user.role}</span>
                         </div>
                       </div>
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
-              {errors.leaderId && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
+              {errors.leaderId && <p className="text-sm text-red-500 flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
                   {errors.leaderId}
-                </p>
-              )}
+                </p>}
             </div>
 
             {/* Team Members */}
@@ -411,36 +343,18 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                 </Label>
                 
                 <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addAllMembers}
-                    className="text-xs"
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={addAllMembers} className="text-xs">
                     Todos
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={clearAllMembers}
-                    className="text-xs"
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={clearAllMembers} className="text-xs">
                     Limpar
                   </Button>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-3">
-                {users.map((user) => (
-                  <div key={user.id} className="flex items-center space-x-2 p-1 rounded hover:bg-muted/50">
-                    <Checkbox
-                      id={`member-${user.id}`}
-                      checked={formData.memberIds.includes(user.id)}
-                      onCheckedChange={() => toggleMember(user.id)}
-                      disabled={user.id === formData.leaderId}
-                    />
+                {users.map(user => <div key={user.id} className="flex items-center space-x-2 p-1 rounded hover:bg-muted/50">
+                    <Checkbox id={`member-${user.id}`} checked={formData.memberIds.includes(user.id)} onCheckedChange={() => toggleMember(user.id)} disabled={user.id === formData.leaderId} />
                     <Avatar className="h-6 w-6">
                       <AvatarFallback>{user.avatar}</AvatarFallback>
                     </Avatar>
@@ -448,45 +362,29 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
                       <div className="font-medium">{user.name}</div>
                       <div className="text-xs text-muted-foreground">{user.role}</div>
                     </label>
-                    {user.id === formData.leaderId && (
-                      <Badge variant="outline" className="text-xs">Líder</Badge>
-                    )}
-                  </div>
-                ))}
+                    {user.id === formData.leaderId && <Badge variant="outline" className="text-xs">Líder</Badge>}
+                  </div>)}
               </div>
-              {errors.members && (
-                <p className="text-sm text-red-500 flex items-center gap-1">
+              {errors.members && <p className="text-sm text-red-500 flex items-center gap-1">
                   <AlertCircle className="h-4 w-4" />
                   {errors.members}
-                </p>
-              )}
+                </p>}
             </div>
 
             {/* Selected Members Preview */}
-            {getSelectedMembers().length > 0 && (
-              <div className="bg-muted/50 p-3 rounded-lg">
+            {getSelectedMembers().length > 0 && <div className="bg-muted/50 p-3 rounded-lg">
                 <h4 className="text-sm font-medium mb-2">Membros selecionados:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {getSelectedMembers().map((member) => (
-                    <Badge key={member.id} variant="secondary" className="flex items-center gap-1">
+                  {getSelectedMembers().map(member => <Badge key={member.id} variant="secondary" className="flex items-center gap-1">
                       <Avatar className="h-4 w-4">
                         <AvatarFallback className="text-xs">{member.avatar}</AvatarFallback>
                       </Avatar>
                       <span className="text-xs">{member.name}</span>
-                      {member.id === formData.leaderId && (
-                        <span className="text-xs font-medium">(Líder)</span>
-                      )}
-                      {member.id !== formData.leaderId && (
-                        <X 
-                          className="h-3 w-3 cursor-pointer hover:text-red-500" 
-                          onClick={() => toggleMember(member.id)}
-                        />
-                      )}
-                    </Badge>
-                  ))}
+                      {member.id === formData.leaderId && <span className="text-xs font-medium">(Líder)</span>}
+                      {member.id !== formData.leaderId && <X className="h-3 w-3 cursor-pointer hover:text-red-500" onClick={() => toggleMember(member.id)} />}
+                    </Badge>)}
                 </div>
-              </div>
-            )}
+              </div>}
           </div>
         </div>
 
@@ -498,33 +396,20 @@ export default function CreateTeamModal({ open, onOpenChange }: CreateTeamModalP
           </div>
           
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={handleCancel} disabled={isLoading}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading}
-              className="gap-2"
-            >
-              {isLoading ? (
-                <>
+            <Button onClick={handleSubmit} disabled={isLoading} className="gap-2">
+              {isLoading ? <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   Criando Equipe...
-                </>
-              ) : (
-                <>
+                </> : <>
                   <CheckCircle2 className="w-4 h-4" />
                   Criar Equipe
-                </>
-              )}
+                </>}
             </Button>
           </div>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 }
