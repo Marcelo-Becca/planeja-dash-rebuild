@@ -49,7 +49,7 @@ interface RegisterData {
   };
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOGIN_ATTEMPTS_KEY = 'planeja_login_attempts';
 
@@ -385,10 +385,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
+export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth deve ser usado dentro de AuthProvider');
   }
   return context;
-};
+}
