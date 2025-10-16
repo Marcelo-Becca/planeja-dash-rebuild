@@ -8,6 +8,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ArrowLeft, Calendar, User, CheckCircle2, Clock, AlertTriangle, MessageSquare, Plus, Settings, Trash2, Archive, Play, Pause, Flag, X, Pencil } from 'lucide-react';
 import { useLocalData } from '@/hooks/useLocalData';
 import { useTasks } from '@/hooks/useTasks';
@@ -477,12 +480,35 @@ export default function TaskDetail() {
                       <ProgressSlider value={progress} onChange={setProgress} disabled={task.status === 'completed'} />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
-                        <div className="flex items-center text-sm">
-                          <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                          <span className="text-muted-foreground mr-2">Prazo:</span>
-                          <span className={cn("font-medium", isOverdue ? "text-red-400" : "text-foreground")}>
-                            {new Date(task.due_date).toLocaleDateString('pt-BR')}
-                          </span>
+                        <div className="space-y-2">
+                          <Label className="text-sm text-muted-foreground">Prazo</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-start text-left font-normal",
+                                  isOverdue && "border-red-400 text-red-400"
+                                )}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" />
+                                {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={new Date(task.due_date)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    handleUpdateTask({ due_date: date.toISOString().split('T')[0] });
+                                  }
+                                }}
+                                initialFocus
+                                className="pointer-events-auto"
+                              />
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         
                         <div className="flex items-center text-sm">
