@@ -74,13 +74,28 @@ const priorityOptions = [{
   dot: 'bg-red-500'
 }];
 export default function TaskDetail() {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { tasks, loading: tasksLoading, updateTask, deleteTask } = useTasks();
-  const { projects } = useProjects();
-  const { users } = useLocalData();
-  const { showUndoToast } = useUndoToast();
-  const { user: currentUser } = useAuth();
+  const {
+    tasks,
+    loading: tasksLoading,
+    updateTask,
+    deleteTask
+  } = useTasks();
+  const {
+    projects
+  } = useProjects();
+  const {
+    users
+  } = useLocalData();
+  const {
+    showUndoToast
+  } = useUndoToast();
+  const {
+    user: currentUser
+  } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [newComment, setNewComment] = useState('');
   const [progress, setProgress] = useState(0);
@@ -103,23 +118,21 @@ export default function TaskDetail() {
   }>>([]);
   const [loadingSubtasks, setLoadingSubtasks] = useState(true);
   const [loadingComments, setLoadingComments] = useState(true);
-  
   const task = tasks.find(t => t.id === id);
   const project = task?.project_id ? projects.find(p => p.id === task.project_id) : null;
 
   // Fetch subtasks and comments from database
   useEffect(() => {
     if (!id) return;
-
     const fetchSubtasks = async () => {
       try {
         setLoadingSubtasks(true);
-        const { data, error } = await supabase
-          .from('task_subtasks')
-          .select('*')
-          .eq('task_id', id)
-          .order('created_at', { ascending: true });
-
+        const {
+          data,
+          error
+        } = await supabase.from('task_subtasks').select('*').eq('task_id', id).order('created_at', {
+          ascending: true
+        });
         if (error) throw error;
         setSubtasks(data || []);
       } catch (error: any) {
@@ -128,28 +141,25 @@ export default function TaskDetail() {
         setLoadingSubtasks(false);
       }
     };
-
     const fetchComments = async () => {
       try {
         setLoadingComments(true);
-        const { data, error } = await supabase
-          .from('task_comments')
-          .select('*')
-          .eq('task_id', id)
-          .order('created_at', { ascending: true });
-
+        const {
+          data,
+          error
+        } = await supabase.from('task_comments').select('*').eq('task_id', id).order('created_at', {
+          ascending: true
+        });
         if (error) throw error;
 
         // Fetch profiles separately
         if (data && data.length > 0) {
           const authorIds = [...new Set(data.map(c => c.author_id))];
-          const { data: profiles, error: profilesError } = await supabase
-            .from('profiles')
-            .select('id, name, avatar, role')
-            .in('id', authorIds);
-
+          const {
+            data: profiles,
+            error: profilesError
+          } = await supabase.from('profiles').select('id, name, avatar, role').in('id', authorIds);
           if (profilesError) throw profilesError;
-
           const formattedComments = data.map(comment => {
             const author = profiles?.find(p => p.id === comment.author_id);
             return {
@@ -163,7 +173,6 @@ export default function TaskDetail() {
               createdAt: new Date(comment.created_at)
             };
           });
-          
           setComments(formattedComments);
         } else {
           setComments([]);
@@ -174,43 +183,26 @@ export default function TaskDetail() {
         setLoadingComments(false);
       }
     };
-
     fetchSubtasks();
     fetchComments();
 
     // Subscribe to real-time changes
-    const subtasksChannel = supabase
-      .channel('task-subtasks-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_subtasks',
-          filter: `task_id=eq.${id}`
-        },
-        () => {
-          fetchSubtasks();
-        }
-      )
-      .subscribe();
-
-    const commentsChannel = supabase
-      .channel('task-comments-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_comments',
-          filter: `task_id=eq.${id}`
-        },
-        () => {
-          fetchComments();
-        }
-      )
-      .subscribe();
-
+    const subtasksChannel = supabase.channel('task-subtasks-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'task_subtasks',
+      filter: `task_id=eq.${id}`
+    }, () => {
+      fetchSubtasks();
+    }).subscribe();
+    const commentsChannel = supabase.channel('task-comments-changes').on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'task_comments',
+      filter: `task_id=eq.${id}`
+    }, () => {
+      fetchComments();
+    }).subscribe();
     return () => {
       supabase.removeChannel(subtasksChannel);
       supabase.removeChannel(commentsChannel);
@@ -225,18 +217,15 @@ export default function TaskDetail() {
       setProgress(calculatedProgress);
     }
   }, [subtasks, task]);
-
   if (tasksLoading) {
-    return (
-      <Layout>
+    return <Layout>
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-muted-foreground">Carregando tarefa...</p>
           </div>
         </div>
-      </Layout>
-    );
+      </Layout>;
   }
   if (!task) {
     const suggestions = tasks.filter(t => t.title.toLowerCase().includes(id?.toLowerCase() || '')).slice(0, 3).map(t => ({
@@ -281,28 +270,25 @@ export default function TaskDetail() {
   const handleSubtaskToggle = async (subtaskId: string) => {
     const subtask = subtasks.find(st => st.id === subtaskId);
     if (!subtask) return;
-
     try {
-      const { error } = await supabase
-        .from('task_subtasks')
-        .update({ completed: !subtask.completed })
-        .eq('id', subtaskId);
-
+      const {
+        error
+      } = await supabase.from('task_subtasks').update({
+        completed: !subtask.completed
+      }).eq('id', subtaskId);
       if (error) throw error;
     } catch (error: any) {
       console.error('Error updating subtask:', error);
     }
   };
-
   const handleEditSubtask = async (subtaskId: string, newText: string) => {
     try {
-      const { error } = await supabase
-        .from('task_subtasks')
-        .update({ text: newText })
-        .eq('id', subtaskId);
-
+      const {
+        error
+      } = await supabase.from('task_subtasks').update({
+        text: newText
+      }).eq('id', subtaskId);
       if (error) throw error;
-
       showUndoToast('Subtarefa atualizada', {
         message: 'O nome da subtarefa foi alterado',
         undo: async () => {}
@@ -311,16 +297,12 @@ export default function TaskDetail() {
       console.error('Error updating subtask:', error);
     }
   };
-
   const handleDeleteSubtask = async (subtaskId: string) => {
     try {
-      const { error } = await supabase
-        .from('task_subtasks')
-        .delete()
-        .eq('id', subtaskId);
-
+      const {
+        error
+      } = await supabase.from('task_subtasks').delete().eq('id', subtaskId);
       if (error) throw error;
-
       showUndoToast('Subtarefa excluída', {
         message: 'A subtarefa foi removida',
         undo: async () => {}
@@ -331,18 +313,15 @@ export default function TaskDetail() {
   };
   const handleAddSubtask = async () => {
     if (!newSubtaskText.trim() || !task) return;
-
     try {
-      const { error } = await supabase
-        .from('task_subtasks')
-        .insert({
-          task_id: task.id,
-          text: newSubtaskText.trim(),
-          completed: false
-        });
-
+      const {
+        error
+      } = await supabase.from('task_subtasks').insert({
+        task_id: task.id,
+        text: newSubtaskText.trim(),
+        completed: false
+      });
       if (error) throw error;
-
       setNewSubtaskText('');
       setShowSubtaskInput(false);
       showUndoToast('Subtarefa adicionada', {
@@ -355,18 +334,15 @@ export default function TaskDetail() {
   };
   const handleAddComment = async () => {
     if (!newComment.trim() || !currentUser || !task) return;
-
     try {
-      const { error } = await supabase
-        .from('task_comments')
-        .insert({
-          task_id: task.id,
-          text: newComment.trim(),
-          author_id: currentUser.id
-        });
-
+      const {
+        error
+      } = await supabase.from('task_comments').insert({
+        task_id: task.id,
+        text: newComment.trim(),
+        author_id: currentUser.id
+      });
       if (error) throw error;
-
       setNewComment('');
       showUndoToast('Comentário adicionado', {
         message: 'Seu comentário foi salvo',
@@ -484,40 +460,24 @@ export default function TaskDetail() {
                           <Label className="text-sm text-muted-foreground">Prazo</Label>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  isOverdue && "border-red-400 text-red-400"
-                                )}
-                              >
+                              <Button variant="outline" className={cn("w-full justify-start text-left font-normal", isOverdue && "border-red-400 text-red-400")}>
                                 <Calendar className="mr-2 h-4 w-4" />
                                 {new Date(task.due_date).toLocaleDateString('pt-BR')}
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <CalendarComponent
-                                mode="single"
-                                selected={new Date(task.due_date)}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    handleUpdateTask({ due_date: date.toISOString().split('T')[0] });
-                                  }
-                                }}
-                                initialFocus
-                                className="pointer-events-auto"
-                              />
+                              <CalendarComponent mode="single" selected={new Date(task.due_date)} onSelect={date => {
+                              if (date) {
+                                handleUpdateTask({
+                                  due_date: date.toISOString().split('T')[0]
+                                });
+                              }
+                            }} initialFocus className="pointer-events-auto" />
                             </PopoverContent>
                           </Popover>
                         </div>
                         
-                        <div className="flex items-center text-sm">
-                          <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                          <span className="text-muted-foreground mr-2">Criada em:</span>
-                          <span className="text-foreground font-medium">
-                            {new Date(task.created_at).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
+                        
                       </div>
                     </CardContent>
                   </Card>
@@ -535,9 +495,7 @@ export default function TaskDetail() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {task.assignees && task.assignees.length > 0 ? (
-                          task.assignees.map(user => (
-                            <div key={user.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
+                        {task.assignees && task.assignees.length > 0 ? task.assignees.map(user => <div key={user.id} className="flex items-center p-3 bg-muted/30 rounded-lg">
                               <Avatar className="w-10 h-10 mr-3">
                                 <AvatarFallback className="bg-primary/10 text-primary">
                                   {user.name.charAt(0)}
@@ -548,16 +506,12 @@ export default function TaskDetail() {
                                   {user.name}
                                 </p>
                               </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-center py-4">
+                            </div>) : <div className="text-center py-4">
                             <User className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
                             <p className="text-sm text-muted-foreground">
                               Nenhum responsável atribuído
                             </p>
-                          </div>
-                        )}
+                          </div>}
                       </div>
                     </CardContent>
                   </Card>
@@ -605,21 +559,9 @@ export default function TaskDetail() {
                     {subtasks.map(subtask => <div key={subtask.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg group hover:bg-muted/50 transition-colors">
                         <Checkbox checked={subtask.completed} onCheckedChange={() => handleSubtaskToggle(subtask.id)} />
                         <div className="flex-1 min-w-0">
-                          <InlineEdit 
-                            value={subtask.text} 
-                            onSave={(newText) => handleEditSubtask(subtask.id, newText)}
-                            displayClassName={cn("text-sm", subtask.completed && "line-through text-muted-foreground")}
-                            className="text-sm"
-                            required
-                            validation={(value) => value.length > 200 ? 'Texto muito longo (max 200 caracteres)' : null}
-                          />
+                          <InlineEdit value={subtask.text} onSave={newText => handleEditSubtask(subtask.id, newText)} displayClassName={cn("text-sm", subtask.completed && "line-through text-muted-foreground")} className="text-sm" required validation={value => value.length > 200 ? 'Texto muito longo (max 200 caracteres)' : null} />
                         </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleDeleteSubtask(subtask.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => handleDeleteSubtask(subtask.id)} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>)}
