@@ -162,7 +162,18 @@ export function useCalendar() {
   // Event CRUD operations
   const createEvent = useCallback(async (eventData: Omit<CalendarEvent, 'id' | 'createdBy' | 'createdAt' | 'updatedAt'>) => {
     try {
-      // Insert event (created_by is automatically set by DEFAULT auth.uid())
+      // Garante que o usuário está autenticado antes de criar (evita RLS por auth.uid() nulo)
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: 'Você precisa estar logado',
+          description: 'Faça login para criar eventos.',
+          variant: 'destructive',
+        });
+        return null;
+      }
+
+      // Insert event (created_by é definido via DEFAULT auth.uid() no banco)
       const { data: event, error: eventError } = await supabase
         .from('calendar_events')
         .insert({
@@ -180,7 +191,7 @@ export function useCalendar() {
           color: eventData.color || null,
           status: eventData.status,
         })
-        .select()
+        .select('id, title')
         .single();
 
       if (eventError) throw eventError;
