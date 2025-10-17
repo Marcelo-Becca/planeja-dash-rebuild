@@ -406,10 +406,21 @@ export default function TaskDetail() {
             </div>
             
             <div className="flex items-center gap-2">
-              {task.status !== 'completed' && <Button onClick={handleMarkCompleted} className="gap-2">
+              {task.status !== 'completed' ? (
+                <Button onClick={handleMarkCompleted} className="gap-2">
                   <CheckCircle2 className="w-4 h-4" />
                   Marcar como Concluída
-                </Button>}
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => handleStatusChange('in-progress')} 
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  Reabrir Tarefa
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -462,7 +473,7 @@ export default function TaskDetail() {
                       })} multiline placeholder="Adicione uma descrição para a tarefa..." displayClassName="text-muted-foreground leading-relaxed" />
                       </div>
 
-                      <ProgressSlider value={progress} onChange={setProgress} disabled={task.status === 'completed'} />
+                      <ProgressSlider value={progress} onChange={setProgress} disabled={false} />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
                         <div className="space-y-2">
