@@ -24,7 +24,6 @@ import { useUndoToast } from '@/components/UndoToast';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import type { Task as TaskType } from '@/hooks/useTasks';
 const statusOptions = [{
   value: 'pending',
   label: 'Pendente',
@@ -255,19 +254,10 @@ export default function TaskDetail() {
       console.error('Error updating task:', error);
     }
   };
-  const handleStatusChange = async (newStatus: TaskType['status']) => {
-    try {
-      await updateTask(task.id, { status: newStatus });
-    } catch (error) {
-      // Tentativa de auto-atribuição e nova atualização de status
-      try {
-        if (!currentUser) return;
-        await supabase.from('task_assignees').insert({ task_id: task.id, user_id: currentUser.id });
-        await updateTask(task.id, { status: newStatus });
-      } catch (e) {
-        console.error('Error changing status with self-assign fallback:', e);
-      }
-    }
+  const handleStatusChange = (newStatus: string) => {
+    handleUpdateTask({
+      status: newStatus
+    });
   };
   const handleMarkCompleted = () => {
     handleUpdateTask({
@@ -361,26 +351,8 @@ export default function TaskDetail() {
   };
 
   const handleUpdateAssignees = async (newAssigneeIds: string[]) => {
-    if (!task) return;
-    const currentIds = new Set(task.assignees?.map(a => a.id) || []);
-    const newIds = new Set(newAssigneeIds);
-    const toAdd = Array.from(newIds).filter(id => !currentIds.has(id));
-    const toRemove = Array.from(currentIds).filter(id => !newIds.has(id));
-
     try {
-      if (toAdd.length > 0) {
-        const rows = toAdd.map(user_id => ({ task_id: task.id, user_id }));
-        const { error: insertError } = await supabase.from('task_assignees').insert(rows);
-        if (insertError) throw insertError;
-      }
-      if (toRemove.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('task_assignees')
-          .delete()
-          .eq('task_id', task.id)
-          .in('user_id', toRemove);
-        if (deleteError) throw deleteError;
-      }
+      await updateTask(task.id, {}, newAssigneeIds);
       showUndoToast('Responsáveis atualizados', {
         message: 'A lista de responsáveis foi atualizada',
         undo: async () => {}
@@ -434,21 +406,10 @@ export default function TaskDetail() {
             </div>
             
             <div className="flex items-center gap-2">
-              {task.status !== 'completed' ? (
-                <Button onClick={handleMarkCompleted} className="gap-2">
+              {task.status !== 'completed' && <Button onClick={handleMarkCompleted} className="gap-2">
                   <CheckCircle2 className="w-4 h-4" />
                   Marcar como Concluída
-                </Button>
-              ) : (
-                <Button 
-                  onClick={() => handleStatusChange('in-progress')} 
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Reabrir Tarefa
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
         </div>
@@ -475,7 +436,7 @@ export default function TaskDetail() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="flex flex-wrap items-center gap-3">
-                        <select value={task.status} onChange={e => handleStatusChange(e.target.value as TaskType['status'])} className={cn("px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer", statusConfig.color, statusConfig.bg, "border-current/20 bg-current/5")}>
+                        <select value={task.status} onChange={e => handleStatusChange(e.target.value)} className={cn("px-3 py-2 rounded-lg text-sm font-medium border cursor-pointer", statusConfig.color, statusConfig.bg, "border-current/20 bg-current/5")}>
                           {statusOptions.map(option => <option key={option.value} value={option.value}>
                               {option.label}
                             </option>)}
@@ -501,7 +462,7 @@ export default function TaskDetail() {
                       })} multiline placeholder="Adicione uma descrição para a tarefa..." displayClassName="text-muted-foreground leading-relaxed" />
                       </div>
 
-                      <ProgressSlider value={progress} onChange={setProgress} disabled={false} />
+                      <ProgressSlider value={progress} onChange={setProgress} disabled={task.status === 'completed'} />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
                         <div className="space-y-2">
