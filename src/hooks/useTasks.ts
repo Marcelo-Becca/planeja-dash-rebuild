@@ -192,6 +192,7 @@ export function useTasks() {
     assignee_ids?: string[]
   ) => {
     try {
+      // Attempt update
       const { error: updateError } = await supabase
         .from('tasks')
         .update(updates)
@@ -199,28 +200,42 @@ export function useTasks() {
 
       if (updateError) throw updateError;
 
-      // Update assignees if provided
+      // If updating assignees, replace them
       if (assignee_ids !== undefined) {
-        // Delete existing assignees
         const { error: deleteError } = await supabase
           .from('task_assignees')
           .delete()
           .eq('task_id', taskId);
-
         if (deleteError) throw deleteError;
 
-        // Insert new assignees
         if (assignee_ids.length > 0) {
-          const taskAssignees = assignee_ids.map(user_id => ({
-            task_id: taskId,
-            user_id: user_id,
-          }));
-
+          const taskAssignees = assignee_ids.map(user_id => ({ task_id: taskId, user_id }));
           const { error: insertError } = await supabase
             .from('task_assignees')
             .insert(taskAssignees);
-
           if (insertError) throw insertError;
+        }
+      }
+
+      // Verify that update actually applied (RLS may silently ignore)
+      let needsCheck = 'status' in updates || 'priority' in updates || 'due_date' in updates || 'description' in updates || 'title' in updates;
+      if (needsCheck) {
+        const { data: checkRow, error: checkError } = await supabase
+          .from('tasks')
+          .select('title, description, status, priority, due_date')
+          .eq('id', taskId)
+          .maybeSingle();
+        if (checkError) throw checkError;
+
+        // If a specific field was updated but didn't change, treat as permission issue
+        if (checkRow) {
+          if ((updates.status && checkRow.status !== updates.status) ||
+              (updates.priority && checkRow.priority !== updates.priority) ||
+              (updates.due_date && checkRow.due_date !== updates.due_date) ||
+              (updates.title && checkRow.title !== updates.title) ||
+              (updates.description && checkRow.description !== updates.description)) {
+            throw new Error('Você não tem permissão para atualizar esta tarefa. Você precisa ser líder do projeto ou responsável pela tarefa.');
+          }
         }
       }
 
