@@ -2,19 +2,25 @@ import Layout from "@/components/Layout";
 import EmptyState from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocalData } from "@/hooks/useLocalData";
 import { useAuth } from "@/contexts/AuthContext";
 import { BarChart3, CheckCircle, Clock, FolderOpen, Users, Calendar, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import CreateProjectModal from "@/components/CreateProjectModal";
 import CreateTaskModal from "@/components/CreateTaskModal";
+import { useProjects } from "@/hooks/useProjects";
+import { useTasks } from "@/hooks/useTasks";
+import { useTeams } from "@/hooks/useTeams";
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { projects, tasks, teams } = useLocalData();
+  const { projects, loading: loadingProjects } = useProjects();
+  const { tasks, loading: loadingTasks } = useTasks();
+  const { teams, loading: loadingTeams } = useTeams();
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
+
+  const loading = loadingProjects || loadingTasks || loadingTeams;
 
   // Statistics
   const completedTasks = tasks.filter(task => task.status === 'completed').length;
@@ -22,9 +28,33 @@ export default function Dashboard() {
   const inProgressTasks = tasks.filter(task => task.status === 'in-progress').length;
   const activeProjects = projects.filter(project => project.status === 'active').length;
   const completedProjects = projects.filter(project => project.status === 'completed').length;
-  const activeTeams = teams.filter(team => team.status === 'active').length;
+  const activeTeams = teams.length;
+
+  // Calculate project metrics
+  const projectsWithMetrics = projects.map(project => {
+    const projectTasks = tasks.filter(t => t.project_id === project.id);
+    const completedProjectTasks = projectTasks.filter(t => t.status === 'completed').length;
+    return {
+      ...project,
+      tasksCount: projectTasks.length,
+      completedTasks: completedProjectTasks,
+      progress: projectTasks.length > 0 ? Math.round((completedProjectTasks / projectTasks.length) * 100) : 0
+    };
+  });
 
   const hasData = projects.length > 0 || tasks.length > 0 || teams.length > 0;
+
+  if (loading && !hasData) {
+    return (
+      <Layout>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <div className="text-center">
+            <p className="text-muted-foreground">Carregando...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!hasData) {
     return (
@@ -167,19 +197,21 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {projects.slice(0, 3).map((project) => (
-                    <div key={project.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{project.name}</h4>
-                        <p className="text-sm text-muted-foreground">{project.description}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium">{project.progress}%</div>
-                        <div className="text-xs text-muted-foreground">
-                          {project.completedTasks}/{project.tasksCount} tarefas
+                  {projectsWithMetrics.slice(0, 3).map((project) => (
+                    <Link key={project.id} to={`/projects/${project.id}`}>
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
+                        <div>
+                          <h4 className="font-medium">{project.name}</h4>
+                          <p className="text-sm text-muted-foreground line-clamp-1">{project.description}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">{project.progress}%</div>
+                          <div className="text-xs text-muted-foreground">
+                            {project.completedTasks}/{project.tasksCount} tarefas
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
@@ -200,24 +232,26 @@ export default function Dashboard() {
               <CardContent>
                 <div className="space-y-4">
                   {tasks.slice(0, 5).map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">{task.title}</h4>
-                        <p className="text-sm text-muted-foreground">{task.description}</p>
+                    <Link key={task.id} to={`/tasks/${task.id}`}>
+                      <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium">{task.title}</h4>
+                          <p className="text-sm text-muted-foreground line-clamp-1">{task.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className={`px-2 py-1 text-xs rounded-full whitespace-nowrap ${
+                            task.status === 'completed' ? 'bg-success/10 text-success' :
+                            task.status === 'in-progress' ? 'bg-info/10 text-info' :
+                            task.status === 'pending' ? 'bg-warning/10 text-warning' :
+                            'bg-destructive/10 text-destructive'
+                          }`}>
+                            {task.status === 'completed' ? 'Concluída' :
+                             task.status === 'in-progress' ? 'Em andamento' :
+                             task.status === 'pending' ? 'Pendente' : 'Atrasada'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          task.status === 'completed' ? 'bg-green-100 text-green-700' :
-                          task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
-                          task.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
-                          {task.status === 'completed' ? 'Concluída' :
-                           task.status === 'in-progress' ? 'Em andamento' :
-                           task.status === 'pending' ? 'Pendente' : 'Atrasada'}
-                        </span>
-                      </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
