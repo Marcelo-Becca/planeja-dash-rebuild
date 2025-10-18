@@ -24,6 +24,8 @@ export interface Project {
     id: string;
     name: string;
   }[];
+  tasksCount?: number;
+  completedTasksCount?: number;
 }
 
 export function useProjects() {
@@ -56,16 +58,30 @@ export function useProjects() {
 
       if (projectTeamsError) throw projectTeamsError;
 
-      // Combine projects with their teams
-      const projectsWithTeams = (projectsData?.map(project => ({
-        ...project,
-        priority: project.priority as 'low' | 'medium' | 'high' | 'urgent',
-        status: project.status as 'active' | 'completed' | 'on-hold' | 'planning',
-        teams: projectTeamsData
-          ?.filter(pt => pt.project_id === project.id)
-          .map(pt => pt.team)
-          .filter((team): team is { id: string; name: string } => team !== null) || []
-      })) || []) as Project[];
+      // Fetch tasks count for each project
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('tasks')
+        .select('id, project_id, status');
+
+      if (tasksError) throw tasksError;
+
+      // Combine projects with their teams and tasks count
+      const projectsWithTeams = (projectsData?.map(project => {
+        const projectTasks = tasksData?.filter(task => task.project_id === project.id) || [];
+        const completedTasks = projectTasks.filter(task => task.status === 'completed');
+        
+        return {
+          ...project,
+          priority: project.priority as 'low' | 'medium' | 'high' | 'urgent',
+          status: project.status as 'active' | 'completed' | 'on-hold' | 'planning',
+          teams: projectTeamsData
+            ?.filter(pt => pt.project_id === project.id)
+            .map(pt => pt.team)
+            .filter((team): team is { id: string; name: string } => team !== null) || [],
+          tasksCount: projectTasks.length,
+          completedTasksCount: completedTasks.length,
+        };
+      }) || []) as Project[];
 
       setProjects(projectsWithTeams);
     } catch (error: any) {

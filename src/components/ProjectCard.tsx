@@ -39,10 +39,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const deadline = new Date(project.end_date);
   const isOverdue = deadline < new Date() && project.status !== 'completed';
   
-  // Calculate progress (placeholder - you'll need to fetch tasks data)
-  const progress = 0;
-  const tasksCount = 0;
-  const completedTasks = 0;
+  // Calculate progress from tasks data
+  const tasksCount = project.tasksCount || 0;
+  const completedTasks = project.completedTasksCount || 0;
+  const progress = tasksCount > 0 ? Math.round((completedTasks / tasksCount) * 100) : 0;
   
   // Get team members count
   const teamMembersCount = project.teams?.length || 0;
