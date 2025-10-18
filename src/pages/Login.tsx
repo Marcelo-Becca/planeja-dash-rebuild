@@ -74,7 +74,9 @@ const Login = () => {
       await login(formData.email, formData.password, formData.rememberMe);
       // Aguarda um momento para o estado do usuário ser atualizado
       setTimeout(() => {
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard', {
+          replace: true
+        });
       }, 100);
     } catch (error) {
       // Erros já tratados no contexto
@@ -151,12 +153,7 @@ const Login = () => {
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center space-x-2">
-                <Checkbox id="remember" checked={formData.rememberMe} onCheckedChange={checked => handleInputChange('rememberMe', checked as boolean)} />
-                <Label htmlFor="remember" className="text-sm cursor-pointer" title="Não recomendado em computadores públicos">
-                  Lembrar de mim
-                </Label>
-              </div>
+              
 
               {/* Block Warning */}
               {isBlocked && <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 text-sm text-destructive animate-fade-in">
